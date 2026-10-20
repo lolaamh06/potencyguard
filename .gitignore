@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+dashboard/node_modules
+dashboard/dist/
+dashboard/.vite/
+
+# OS and editors
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+
+# Secrets and keys
+.env
+*.env
+*.pem
+*.key
+keys/
+
+# Generated data and logs
+data/generated/
+data/runs/
+assets-raw/
+*.log
+*.db
+*.sqlite
+
+# Claude Code local settings
+.claude/settings.local.json

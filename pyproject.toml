@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "potencyguard"
+version = "0.0.0"
+description = "PotencyGuard prototype (SAP Hackfest 2026)"
+requires-python = ">=3.12"
+
+[tool.setuptools]
+packages = ["shared", "simulator", "edge", "planner", "backend"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["dashboard"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,57 @@
+/* Throwaway smoke-test styles. Colours are the --void, --frost and --mist tokens. */
+:root {
+  --void: #04070d;
+  --frost: #e8f4ff;
+  --mist: #8fa3bf;
+}
+
+body {
+  margin: 0;
+  background: var(--void);
+  color: var(--frost);
+  font-family: system-ui, sans-serif;
+}
+
+.canvas-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+.spacer {
+  position: relative;
+  z-index: 1;
+  height: 400vh;
+}
+
+.hint {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  color: var(--mist);
+  font-size: 0.9rem;
+}
+
+.notice {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  color: var(--frost);
+}
+
+.overlay {
+  position: fixed;
+  left: 0.75rem;
+  bottom: 0.75rem;
+  z-index: 10;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  background: rgb(4 7 13 / 70%);
+  color: var(--mist);
+  font: 12px/1.4 ui-monospace, Consolas, monospace;
+  pointer-events: none;
+}
