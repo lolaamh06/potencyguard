@@ -1,6 +1,6 @@
 id: baseline_ok
 title: Baseline, cold chain holds
-description: A stable journey. Outside temperatures change with the time of day, the cooling unit cycles on and off, and the box stays close to its setpoint the whole way.
+description: A stable journey. The temperature of the cargo area around the box changes with the time of day, the cooling unit cycles on and off, and the box stays close to its setpoint the whole way.
 seed: 101
 duration_h: 48
 sample_interval_s: 600

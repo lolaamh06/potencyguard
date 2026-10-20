@@ -157,7 +157,7 @@ class ResolvedScenario:
         }
 
     def ambient_function(self) -> Callable[[float], float]:
-        """Outside temperature at a simulated time in seconds.
+        """Temperature around the box (the cargo area) at a simulated time in seconds.
 
         The keyframes are moved later by ambient_shift_h and the whole profile is moved by
         ambient_jitter_c. Before the first and after the last keyframe the value is held

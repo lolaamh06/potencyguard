@@ -16,7 +16,7 @@
 
 ## Scenario files
 
-Any number in an event may be a range `{min: a, max: b}`; it is drawn once per run. The start range must end before the end range begins. Optional `ambient_jitter_c` and `ambient_shift_h` randomise the whole outside-temperature profile (the shift moves the profile later; values outside the keyframes are held constant). The `expect:` block lists guarantees that must hold for every seed (see `expectations.py`); thresholds may name product limits such as `hard_limit_high_c`.
+Any number in an event may be a range `{min: a, max: b}`; it is drawn once per run. The start range must end before the end range begins. Optional `ambient_jitter_c` and `ambient_shift_h` randomise the whole profile of the temperature around the box (the cargo area) (the shift moves the profile later; values outside the keyframes are held constant). The `expect:` block lists guarantees that must hold for every seed (see `expectations.py`); thresholds may name product limits such as `hard_limit_high_c`.
 
 Event types in scenario files: `heat_load`, `cooling_factor`, `ambient_offset`, `spoof` (modes `hold`, `offset`, `replay`), `glitch`, `shock`.
 
@@ -26,16 +26,16 @@ Event types in scenario files: `heat_load`, `cooling_factor`, `ambient_offset`, 
 |---|---|---|
 | `kill_cooling` | none | cooling capacity to 0 |
 | `derate_cooling` | `factor` 0..1 | cooling capacity scaled |
-| `restore_cooling` | none | ends cooling faults (also scheduled ones) |
+| `restore_cooling` | none | ends cooling faults (also scheduled ones); nothing to restore is accepted as a no-op |
 | `open_door` | `duration_min`, optional `power_w` | extra heat for a while |
-| `heat_soak` | `delta_c`, `duration_h`, `ramp_h` | outside temperature up, hold, down |
-| `cold_snap` | `delta_c` (negative), `duration_h`, `ramp_h` | outside temperature down, hold, up |
+| `heat_soak` | `delta_c`, `duration_h`, `ramp_h` | cargo-area temperature up, hold, down |
+| `cold_snap` | `delta_c` (negative), `duration_h`, `ramp_h` | cargo-area temperature down, hold, up |
 | `spoof_sensor` | `mode` hold, offset or replay plus its values, optional `duration_min` | reported temperature falsified; the true one is untouched |
-| `stop_spoof` | none | ends the spoof |
+| `stop_spoof` | none | ends the spoof; no spoof active is accepted as a no-op |
 | `glitch_spike` | `value_c` | the next reported sample only |
 | `shock` | `peak_g` | the next shock sample only |
 
-A rejected fault (unknown type, bad value) returns an error result and changes nothing. A fault shows from the next sample on.
+A rejected fault (unknown type, bad value, missing parameter) returns an error result and changes nothing. `stop_spoof` or `restore_cooling` with nothing to stop or restore is accepted with a short note and also changes nothing. A fault shows from the next sample on.
 
 ## Commands
 

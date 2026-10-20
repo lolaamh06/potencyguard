@@ -1,0 +1,1398 @@
+{
+ "meta": {
+  "schema_version": "1",
+  "note": "All expected values are computed by the Python reference implementation (edge/potency.py) from synthetic product parameters for an imaginary vaccine. Only document_checks holds rounded numbers taken from the team document.",
+  "constants": {
+   "Ea_over_R": 10000,
+   "T_ref_c": 5.0,
+   "tau_max_h": 17520,
+   "P_min": 0.9,
+   "hard_limit_low_c": 0.0,
+   "hard_limit_high_c": 40.0,
+   "hard_limit_consecutive_samples": 2
+  },
+  "integration_rule": "right endpoint: each sample covers the interval ending at it"
+ },
+ "af_cases": [
+  {
+   "temp_c": -10,
+   "expected_af": 0.12882305548671094
+  },
+  {
+   "temp_c": 0,
+   "expected_af": 0.5178359770056451
+  },
+  {
+   "temp_c": 2,
+   "expected_af": 0.675712282710891
+  },
+  {
+   "temp_c": 5,
+   "expected_af": 1.0
+  },
+  {
+   "temp_c": 8,
+   "expected_af": 1.467591362039526
+  },
+  {
+   "temp_c": 12,
+   "expected_af": 2.4170861949849236
+  },
+  {
+   "temp_c": 20,
+   "expected_af": 6.293990699196298
+  },
+  {
+   "temp_c": 25,
+   "expected_af": 11.152461192385276
+  },
+  {
+   "temp_c": 30,
+   "expected_af": 19.39187973928025
+  },
+  {
+   "temp_c": 40,
+   "expected_af": 55.603513831264195
+  }
+ ],
+ "tau_cases": [
+  {
+   "name": "constant_12c_8h",
+   "temps_c": [
+    12.0
+   ],
+   "dts_h": [
+    8.0
+   ],
+   "expected_tau_eq_h": 19.33668955987939,
+   "expected_potency": 0.9998837211682623,
+   "expected_shelf_life_used_fraction": 0.001103692326477134,
+   "expected_mkt_c": 12.0
+  },
+  {
+   "name": "constant_30c_24h",
+   "temps_c": [
+    30.0
+   ],
+   "dts_h": [
+    24.0
+   ],
+   "expected_tau_eq_h": 465.405113742726,
+   "expected_potency": 0.9972050932516093,
+   "expected_shelf_life_used_fraction": 0.026564218820931847,
+   "expected_mkt_c": 30.0
+  },
+  {
+   "name": "two_step_cool_then_warm",
+   "temps_c": [
+    5.0,
+    25.0
+   ],
+   "dts_h": [
+    6.0,
+    6.0
+   ],
+   "expected_tau_eq_h": 72.91476715431166,
+   "expected_potency": 0.9995616065410882,
+   "expected_shelf_life_used_fraction": 0.004161801778214136,
+   "expected_mkt_c": 19.69772136370875
+  },
+  {
+   "name": "ramp_5_to_35_c_in_half_hour_steps",
+   "temps_c": [
+    5.0,
+    5.5,
+    6.0,
+    6.5,
+    7.0,
+    7.5,
+    8.0,
+    8.5,
+    9.0,
+    9.5,
+    10.0,
+    10.5,
+    11.0,
+    11.5,
+    12.0,
+    12.5,
+    13.0,
+    13.5,
+    14.0,
+    14.5,
+    15.0,
+    15.5,
+    16.0,
+    16.5,
+    17.0,
+    17.5,
+    18.0,
+    18.5,
+    19.0,
+    19.5,
+    20.0,
+    20.5,
+    21.0,
+    21.5,
+    22.0,
+    22.5,
+    23.0,
+    23.5,
+    24.0,
+    24.5,
+    25.0,
+    25.5,
+    26.0,
+    26.5,
+    27.0,
+    27.5,
+    28.0,
+    28.5,
+    29.0,
+    29.5,
+    30.0,
+    30.5,
+    31.0,
+    31.5,
+    32.0,
+    32.5,
+    33.0,
+    33.5,
+    34.0,
+    34.5,
+    35.0
+   ],
+   "dts_h": [
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5,
+    0.5
+   ],
+   "expected_tau_eq_h": 297.96185015420383,
+   "expected_potency": 0.9982097428855684,
+   "expected_shelf_life_used_fraction": 0.017006954917477387,
+   "expected_mkt_c": 23.827489799276577
+  },
+  {
+   "name": "uneven_dt",
+   "temps_c": [
+    4.0,
+    9.5,
+    2.0,
+    31.0,
+    6.5
+   ],
+   "dts_h": [
+    0.25,
+    3.0,
+    0.5,
+    12.0,
+    0.1
+   ],
+   "expected_tau_eq_h": 265.3562184285148,
+   "expected_potency": 0.9984054924427488,
+   "expected_shelf_life_used_fraction": 0.015145902878339886,
+   "expected_mkt_c": 28.65551304744332
+  }
+ ],
+ "tracker_cases": [
+  {
+   "name": "clean_run",
+   "readings": [
+    {
+     "t_s": 0.0,
+     "temp_c": 4.7
+    },
+    {
+     "t_s": 600.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 1200.0,
+     "temp_c": 5.3
+    },
+    {
+     "t_s": 1800.0,
+     "temp_c": 4.85
+    },
+    {
+     "t_s": 2400.0,
+     "temp_c": 5.15
+    },
+    {
+     "t_s": 3000.0,
+     "temp_c": 4.7
+    },
+    {
+     "t_s": 3600.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 4200.0,
+     "temp_c": 5.3
+    },
+    {
+     "t_s": 4800.0,
+     "temp_c": 4.85
+    },
+    {
+     "t_s": 5400.0,
+     "temp_c": 5.15
+    },
+    {
+     "t_s": 6000.0,
+     "temp_c": 4.7
+    },
+    {
+     "t_s": 6600.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 7200.0,
+     "temp_c": 5.3
+    },
+    {
+     "t_s": 7800.0,
+     "temp_c": 4.85
+    },
+    {
+     "t_s": 8400.0,
+     "temp_c": 5.15
+    },
+    {
+     "t_s": 9000.0,
+     "temp_c": 4.7
+    },
+    {
+     "t_s": 9600.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 10200.0,
+     "temp_c": 5.3
+    },
+    {
+     "t_s": 10800.0,
+     "temp_c": 4.85
+    },
+    {
+     "t_s": 11400.0,
+     "temp_c": 5.15
+    },
+    {
+     "t_s": 12000.0,
+     "temp_c": 4.7
+    },
+    {
+     "t_s": 12600.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 13200.0,
+     "temp_c": 5.3
+    },
+    {
+     "t_s": 13800.0,
+     "temp_c": 4.85
+    }
+   ],
+   "expected_statuses": [
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok"
+   ],
+   "expected_per_sample": [
+    {
+     "status": "ok",
+     "tau_eq_h": 0.0,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.16666666666666666,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.33991569739766636,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.5033804429031572,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.6733081960463805,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.8336291762436645,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 1.0002958429103312,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 1.173544873641331,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 1.337009619146822,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 1.5069373722900452,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 1.6672583524873292,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 1.833925019153996,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 2.0071740498849957,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 2.1706387953904867,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 2.34056654853371,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 2.5008875287309937,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 2.6675541953976603,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 2.84080322612866,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 3.004267971634151,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 3.174195724777374,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 3.334516704974658,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 3.5011833716413245,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 3.6744324023723243,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 3.837897147877815,
+     "samples_excluded": 0
+    }
+   ],
+   "expected_final_state": {
+    "t_s": 13800.0,
+    "tau_eq_h": 3.837897147877815,
+    "potency": 0.9999769201965629,
+    "shelf_life_used_fraction": 0.00021905805638572004,
+    "mkt_c": 5.0092058841610765,
+    "effective_temp_c": 4.85,
+    "current_af": 0.9807884730329451,
+    "hours_to_min_potency_at_current_temp": 17859.26587073964,
+    "status": "ok",
+    "below_min_potency": false,
+    "samples_seen": 24,
+    "samples_excluded": 0
+   }
+  },
+  {
+   "name": "lone_low_glitch",
+   "readings": [
+    {
+     "t_s": 0.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 600.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 1200.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 1800.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 2400.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 3000.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 3600.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 4200.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 4800.0,
+     "temp_c": -5.0
+    },
+    {
+     "t_s": 5400.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 6000.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 6600.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 7200.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 7800.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 8400.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 9000.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 9600.0,
+     "temp_c": 5.0
+    }
+   ],
+   "expected_statuses": [
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "suspect",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok"
+   ],
+   "expected_per_sample": [
+    {
+     "status": "ok",
+     "tau_eq_h": 0.0,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.16666666666666666,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.3333333333333333,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.5,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.6666666666666666,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.8333333333333333,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.9999999999999999,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 1.1666666666666665,
+     "samples_excluded": 0
+    },
+    {
+     "status": "suspect",
+     "tau_eq_h": 1.3333333333333333,
+     "samples_excluded": 1
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 1.5,
+     "samples_excluded": 1
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 1.6666666666666667,
+     "samples_excluded": 1
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 1.8333333333333335,
+     "samples_excluded": 1
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 2.0,
+     "samples_excluded": 1
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 2.1666666666666665,
+     "samples_excluded": 1
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 2.333333333333333,
+     "samples_excluded": 1
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 2.4999999999999996,
+     "samples_excluded": 1
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 2.666666666666666,
+     "samples_excluded": 1
+    }
+   ],
+   "expected_final_state": {
+    "t_s": 9600.0,
+    "tau_eq_h": 2.666666666666666,
+    "potency": 0.9999839635204186,
+    "shelf_life_used_fraction": 0.00015220700152206997,
+    "mkt_c": 5.0,
+    "effective_temp_c": 5.0,
+    "current_af": 1.0,
+    "hours_to_min_potency_at_current_temp": 17517.333333333332,
+    "status": "ok",
+    "below_min_potency": false,
+    "samples_seen": 17,
+    "samples_excluded": 1
+   }
+  },
+  {
+   "name": "lone_high_glitch_then_recovery",
+   "readings": [
+    {
+     "t_s": 0.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 600.0,
+     "temp_c": 5.2
+    },
+    {
+     "t_s": 1200.0,
+     "temp_c": 4.9
+    },
+    {
+     "t_s": 1800.0,
+     "temp_c": 61.0
+    },
+    {
+     "t_s": 2400.0,
+     "temp_c": 5.1
+    },
+    {
+     "t_s": 3000.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 3600.0,
+     "temp_c": 4.8
+    }
+   ],
+   "expected_statuses": [
+    "ok",
+    "ok",
+    "ok",
+    "suspect",
+    "ok",
+    "ok",
+    "ok"
+   ],
+   "expected_per_sample": [
+    {
+     "status": "ok",
+     "tau_eq_h": 0.0,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.1710281066394671,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.3355536479206659,
+     "samples_excluded": 0
+    },
+    {
+     "status": "suspect",
+     "tau_eq_h": 0.5000791892018647,
+     "samples_excluded": 1
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.6689132766136535,
+     "samples_excluded": 1
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.8355799432803201,
+     "samples_excluded": 1
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.9979903546390994,
+     "samples_excluded": 1
+    }
+   ],
+   "expected_final_state": {
+    "t_s": 3600.0,
+    "tau_eq_h": 0.9979903546390994,
+    "potency": 0.9999939983754078,
+    "shelf_life_used_fraction": 5.696291978533672e-05,
+    "mkt_c": 4.984437118587948,
+    "effective_temp_c": 4.8,
+    "current_af": 0.9744624681526751,
+    "hours_to_min_potency_at_current_temp": 17978.118790820943,
+    "status": "ok",
+    "below_min_potency": false,
+    "samples_seen": 7,
+    "samples_excluded": 1
+   }
+  },
+  {
+   "name": "confirmed_high_excursion",
+   "readings": [
+    {
+     "t_s": 0.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 600.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 1200.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 1800.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 2400.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 3000.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 3600.0,
+     "temp_c": 45.0
+    },
+    {
+     "t_s": 4200.0,
+     "temp_c": 46.5
+    },
+    {
+     "t_s": 4800.0,
+     "temp_c": 47.0
+    },
+    {
+     "t_s": 5400.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 6000.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 6600.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 7200.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 7800.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 8400.0,
+     "temp_c": 5.0
+    }
+   ],
+   "expected_statuses": [
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "suspect",
+    "excursion_confirmed",
+    "excursion_confirmed",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok"
+   ],
+   "expected_per_sample": [
+    {
+     "status": "ok",
+     "tau_eq_h": 0.0,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.16666666666666666,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.3333333333333333,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.5,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.6666666666666666,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.8333333333333333,
+     "samples_excluded": 0
+    },
+    {
+     "status": "suspect",
+     "tau_eq_h": 0.9999999999999999,
+     "samples_excluded": 1
+    },
+    {
+     "status": "excursion_confirmed",
+     "tau_eq_h": 33.881410571333035,
+     "samples_excluded": 0
+    },
+    {
+     "status": "excursion_confirmed",
+     "tau_eq_h": 52.51017126143155,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 52.676837928098216,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 52.84350459476488,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 53.010171261431545,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 53.17683792809821,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 53.34350459476487,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 53.51017126143154,
+     "samples_excluded": 0
+    }
+   ],
+   "expected_final_state": {
+    "t_s": 8400.0,
+    "tau_eq_h": 53.51017126143154,
+    "potency": 0.999678256152104,
+    "shelf_life_used_fraction": 0.0030542335194881014,
+    "mkt_c": 31.54921762690026,
+    "effective_temp_c": 5.0,
+    "current_af": 1.0,
+    "hours_to_min_potency_at_current_temp": 17466.48982873857,
+    "status": "ok",
+    "below_min_potency": false,
+    "samples_seen": 15,
+    "samples_excluded": 0
+   }
+  },
+  {
+   "name": "confirmed_low_excursion_freeze",
+   "readings": [
+    {
+     "t_s": 0.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 600.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 1200.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 1800.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 2400.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 3000.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 3600.0,
+     "temp_c": -2.0
+    },
+    {
+     "t_s": 4200.0,
+     "temp_c": -3.5
+    },
+    {
+     "t_s": 4800.0,
+     "temp_c": -1.0
+    },
+    {
+     "t_s": 5400.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 6000.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 6600.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 7200.0,
+     "temp_c": 5.0
+    }
+   ],
+   "expected_statuses": [
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "suspect",
+    "excursion_confirmed",
+    "excursion_confirmed",
+    "ok",
+    "ok",
+    "ok",
+    "ok"
+   ],
+   "expected_per_sample": [
+    {
+     "status": "ok",
+     "tau_eq_h": 0.0,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.16666666666666666,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.3333333333333333,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.5,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.6666666666666666,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.8333333333333333,
+     "samples_excluded": 0
+    },
+    {
+     "status": "suspect",
+     "tau_eq_h": 0.9999999999999999,
+     "samples_excluded": 1
+    },
+    {
+     "status": "excursion_confirmed",
+     "tau_eq_h": 0.9528775550704266,
+     "samples_excluded": 0
+    },
+    {
+     "status": "excursion_confirmed",
+     "tau_eq_h": 1.0283205971319616,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 1.1949872637986283,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 1.361653930465295,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 1.5283205971319618,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 1.6949872637986285,
+     "samples_excluded": 0
+    }
+   ],
+   "expected_final_state": {
+    "t_s": 7200.0,
+    "tau_eq_h": 1.6949872637986285,
+    "potency": 0.9999898068594762,
+    "shelf_life_used_fraction": 9.674584839033267e-05,
+    "mkt_c": 3.7256514639403235,
+    "effective_temp_c": 5.0,
+    "current_af": 1.0,
+    "hours_to_min_potency_at_current_temp": 17518.3050127362,
+    "status": "ok",
+    "below_min_potency": false,
+    "samples_seen": 13,
+    "samples_excluded": 0
+   }
+  },
+  {
+   "name": "glitch_as_last_sample",
+   "readings": [
+    {
+     "t_s": 0.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 600.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 1200.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 1800.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 2400.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 3000.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 3600.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 4200.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 4800.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 5400.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 6000.0,
+     "temp_c": 88.0
+    }
+   ],
+   "expected_statuses": [
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "ok",
+    "suspect"
+   ],
+   "expected_per_sample": [
+    {
+     "status": "ok",
+     "tau_eq_h": 0.0,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.16666666666666666,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.3333333333333333,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.5,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.6666666666666666,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.8333333333333333,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.9999999999999999,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 1.1666666666666665,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 1.3333333333333333,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 1.5,
+     "samples_excluded": 0
+    },
+    {
+     "status": "suspect",
+     "tau_eq_h": 1.6666666666666667,
+     "samples_excluded": 1
+    }
+   ],
+   "expected_final_state": {
+    "t_s": 6000.0,
+    "tau_eq_h": 1.6666666666666667,
+    "potency": 0.9999899771701245,
+    "shelf_life_used_fraction": 9.512937595129377e-05,
+    "mkt_c": 5.0,
+    "effective_temp_c": 5.0,
+    "current_af": 1.0,
+    "hours_to_min_potency_at_current_temp": 17518.333333333332,
+    "status": "suspect",
+    "below_min_potency": false,
+    "samples_seen": 11,
+    "samples_excluded": 1
+   }
+  },
+  {
+   "name": "uneven_time_steps_with_excursion",
+   "readings": [
+    {
+     "t_s": 0.0,
+     "temp_c": 5.0
+    },
+    {
+     "t_s": 300.0,
+     "temp_c": 5.5
+    },
+    {
+     "t_s": 4500.0,
+     "temp_c": 41.0
+    },
+    {
+     "t_s": 4510.0,
+     "temp_c": 42.0
+    },
+    {
+     "t_s": 9000.0,
+     "temp_c": 6.0
+    },
+    {
+     "t_s": 9000.0,
+     "temp_c": 6.5
+    }
+   ],
+   "expected_statuses": [
+    "ok",
+    "ok",
+    "suspect",
+    "excursion_confirmed",
+    "ok",
+    "ok"
+   ],
+   "expected_per_sample": [
+    {
+     "status": "ok",
+     "tau_eq_h": 0.0,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 0.08888641775871553,
+     "samples_excluded": 0
+    },
+    {
+     "status": "suspect",
+     "tau_eq_h": 1.3332962663807328,
+     "samples_excluded": 1
+    },
+    {
+     "status": "excursion_confirmed",
+     "tau_eq_h": 72.08976746160107,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 73.50842240590097,
+     "samples_excluded": 0
+    },
+    {
+     "status": "ok",
+     "tau_eq_h": 73.50842240590097,
+     "samples_excluded": 0
+    }
+   ],
+   "expected_final_state": {
+    "t_s": 9000.0,
+    "tau_eq_h": 73.50842240590097,
+    "potency": 0.9995580380313123,
+    "shelf_life_used_fraction": 0.004195686210382476,
+    "mkt_c": 33.87426731766436,
+    "effective_temp_c": 6.5,
+    "current_af": 1.2126888815005132,
+    "hours_to_min_potency_at_current_temp": 14386.617906487929,
+    "status": "ok",
+    "below_min_potency": false,
+    "samples_seen": 6,
+    "samples_excluded": 0
+   }
+  }
+ ],
+ "document_checks": [
+  {
+   "description": "8 h at a constant 12 C: acceleration factor",
+   "quantity": "af",
+   "temp_c": 12.0,
+   "hours": 8.0,
+   "expected_rounded": 2.417,
+   "rounding_decimals": 3
+  },
+  {
+   "description": "8 h at a constant 12 C: hours at the reference temperature",
+   "quantity": "tau_eq_h",
+   "temp_c": 12.0,
+   "hours": 8.0,
+   "expected_rounded": 19.34,
+   "rounding_decimals": 2
+  },
+  {
+   "description": "8 h at a constant 12 C: percent of shelf life used",
+   "quantity": "shelf_life_used_percent",
+   "temp_c": 12.0,
+   "hours": 8.0,
+   "expected_rounded": 0.11,
+   "rounding_decimals": 3
+  },
+  {
+   "description": "24 h at a constant 30 C: acceleration factor",
+   "quantity": "af",
+   "temp_c": 30.0,
+   "hours": 24.0,
+   "expected_rounded": 19.39,
+   "rounding_decimals": 2
+  },
+  {
+   "description": "24 h at a constant 30 C: hours at the reference temperature",
+   "quantity": "tau_eq_h",
+   "temp_c": 30.0,
+   "hours": 24.0,
+   "expected_rounded": 465.4,
+   "rounding_decimals": 1
+  },
+  {
+   "description": "24 h at a constant 30 C: percent of shelf life used",
+   "quantity": "shelf_life_used_percent",
+   "temp_c": 30.0,
+   "hours": 24.0,
+   "expected_rounded": 2.66,
+   "rounding_decimals": 2
+  }
+ ]
+}

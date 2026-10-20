@@ -154,6 +154,7 @@ def test_live_demo_runs_without_sleeping(box, make_scenario):
     typed: queue.Queue[str] = queue.Queue()
     typed.put("kill_cooling")
     typed.put("not_a_command")
+    typed.put("stop_spoof")
     waits: list[float] = []
     out = io.StringIO()
     printed = run_live_demo(
@@ -170,6 +171,7 @@ def test_live_demo_runs_without_sleeping(box, make_scenario):
     assert all(w == pytest.approx(600.0 / 3600.0) for w in waits)
     assert text.startswith("seed=3 (fixed)")
     assert "kill_cooling applied" in text and "cannot parse" in text
+    assert "stop_spoof: nothing to stop" in text
     assert "open_door applied" in text and "compressor=" in text
 
 

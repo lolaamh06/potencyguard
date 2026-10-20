@@ -79,8 +79,9 @@ def stdin_commands() -> queue.Queue[str]:
 
     def reader() -> None:
         for line in sys.stdin:
-            if line.strip():
-                lines.put(line.strip())
+            text = line.strip().lstrip("\ufeff")  # piped input from PowerShell starts with a BOM
+            if text:
+                lines.put(text)
 
     threading.Thread(target=reader, daemon=True).start()
     return lines

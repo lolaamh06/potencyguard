@@ -228,7 +228,7 @@ class LiveSimulator:
         elif type_ == "restore_cooling":
             ended = self._end_open(KIND_COOLING, now_s, lambda e: e.params["factor"] < 1.0)
             if not ended:
-                return InjectionResult(False, error="restore_cooling: no cooling fault is active")
+                return InjectionResult(True, None, "restore_cooling: nothing to restore")
             for event in ended:
                 event.params["ended_by"] = "restore_cooling"
             return InjectionResult(True, ended[-1].id, f"cooling restored from t={now_s:.0f} s")
@@ -262,7 +262,7 @@ class LiveSimulator:
         elif type_ == "stop_spoof":
             ended = self._end_open(KIND_SPOOF, now_s)
             if not ended:
-                return InjectionResult(False, error="stop_spoof: no spoof is active")
+                return InjectionResult(True, None, "stop_spoof: nothing to stop")
             return InjectionResult(True, ended[-1].id, f"spoof stopped at t={now_s:.0f} s")
         elif type_ == "glitch_spike":
             params = {"value_c": parsed.value_c, "injected_at_s": now_s}

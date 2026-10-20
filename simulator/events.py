@@ -6,7 +6,7 @@ Every event has a kind that tells the engine how it acts:
 
   cooling_factor  scales the cooling capacity (0 = stopped, 1 = normal)
   heat_load       extra heat inside the box, in watts (for example a door held open)
-  ambient_offset  trapezoid shaped change of the outside temperature
+  ambient_offset  trapezoid shaped change of the temperature around the box (the cargo area)
   spoof           the REPORTED temperature is falsified; the true series never changes
   glitch          one isolated extreme reported temperature (one sample)
   shock           one large shock reading (one sample)
@@ -119,7 +119,7 @@ class CoolingFactorEvent(_Strict):
 
 
 class AmbientOffsetEvent(_Strict):
-    """Outside temperature offset that ramps up, holds and ramps down."""
+    """Offset of the temperature around the box that ramps up, holds and ramps down."""
 
     type: Literal["ambient_offset"]
     start_h: float = Field(ge=0)

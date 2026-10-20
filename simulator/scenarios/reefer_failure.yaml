@@ -1,10 +1,11 @@
 id: reefer_failure
-title: Cooling failure on a hot day
-description: The cooling unit stops working part way through a hot day. The box warms steadily and keeps warming until it is well beyond its allowed range.
+title: Cooling failure in a hot cargo area
+description: The cooling unit stops working part way through the trip while the cargo area around the box is very hot, like a closed cargo space heated by the sun. The box warms steadily and keeps warming until it is well beyond its allowed range.
 seed: 103
 duration_h: 36
 sample_interval_s: 600
 # placeholder, not sourced [SOURCE NEEDED]: temperatures, times and shift below.
+# "ambient" is the temperature of the cargo area around the box (a sun-heated closed space).
 ambient:
   - [0, 22]
   - [10, 32]

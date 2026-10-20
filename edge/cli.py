@@ -1,0 +1,130 @@
+"""Command line for the edge package: python -m edge potency --recording FILE | --all."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from collections.abc import Sequence
+from dataclasses import dataclass
+from pathlib import Path
+
+from edge.potency import PotencyState, PotencyTracker
+from edge.recorded_source import RecordedSource
+from shared.config import REPO_ROOT, ProductConfig, load_product_config
+
+DEFAULT_RECORDINGS_DIR = REPO_ROOT / "data" / "recordings"
+PRINT_EVERY = 12
+FOOTER = "Simulation result on a synthetic box. Not real-world evidence."
+
+
+@dataclass(frozen=True)
+class RecordingAnalysis:
+    """The tracker run over one recording, from the reported readings and from the truth."""
+
+    scenario_id: str
+    seed: int
+    reported_states: list[PotencyState]
+    reported_temps_c: list[float]
+    true_states: list[PotencyState]
+
+
+def ground_truth_path(recording: Path) -> Path:
+    return recording.with_name(recording.name.removesuffix(".jsonl") + ".ground_truth.json")
+
+
+def analyse_recording(recording: Path | str, cfg: ProductConfig) -> RecordingAnalysis:
+    """Replay a recording through the tracker.
+
+    The reported series is what the edge program would see. The true series (from the
+    ground-truth file) is fed to a second tracker only for this analysis.
+    """
+    path = Path(recording)
+    source = RecordedSource(path)
+    source.start()
+    reported = PotencyTracker(cfg)
+    reported_states, reported_temps = [], []
+    while (reading := source.read()) is not None:
+        reported_states.append(reported.update(reading))
+        reported_temps.append(reading.temp_c)
+    header = source.header
+    source.close()
+
+    truth = json.loads(ground_truth_path(path).read_text(encoding="utf-8"))
+    true_tracker = PotencyTracker(cfg)
+    true_states = [
+        true_tracker.update_sample(t, temp)
+        for t, temp in zip(truth["t_s"], truth["true_temp_c"], strict=True)
+    ]
+    return RecordingAnalysis(
+        header["scenario_id"], header["seed"], reported_states, reported_temps, true_states
+    )
+
+
+def _row(label: str, state: PotencyState) -> str:
+    mkt = "n/a" if state.mkt_c is None else f"{state.mkt_c:.2f}"
+    return (
+        f"{label:<38}{state.tau_eq_h:>10.2f}{state.potency * 100:>10.3f}"
+        f"{state.shelf_life_used_fraction * 100:>10.3f}{mkt:>9}{state.samples_excluded:>9}"
+        f"{'yes' if state.below_min_potency else 'no':>11}"
+    )
+
+
+def summary_table(analysis: RecordingAnalysis) -> str:
+    head = (
+        f"{'':<38}{'tau_eq (h)':>10}{'potency %':>10}{'used %':>10}{'MKT (C)':>9}"
+        f"{'excluded':>9}{'< P_min':>11}"
+    )
+    return "\n".join(
+        [
+            head,
+            _row("from reported readings", analysis.reported_states[-1]),
+            _row("from true temperature (ground truth)", analysis.true_states[-1]),
+        ]
+    )
+
+
+def _print_one(path: Path, cfg: ProductConfig, out, detail: bool) -> None:
+    analysis = analyse_recording(path, cfg)
+    print(f"Recording {path.name}: scenario {analysis.scenario_id}, seed {analysis.seed}", file=out)
+    if detail:
+        print("\n  sim hour   reported C   tau_eq (h)   potency %   status", file=out)
+        for i, state in enumerate(analysis.reported_states):
+            if i % PRINT_EVERY == 0:
+                print(
+                    f"  {state.t_s / 3600.0:8.2f}   {analysis.reported_temps_c[i]:10.2f}"
+                    f"   {state.tau_eq_h:10.3f}   {state.potency * 100:9.4f}   {state.status}",
+                    file=out,
+                )
+        print(file=out)
+    print(summary_table(analysis), file=out)
+    print(file=out)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="python -m edge")
+    sub = parser.add_subparsers(dest="command", required=True)
+    potency = sub.add_parser("potency", help="replay recordings through the potency tracker")
+    which = potency.add_mutually_exclusive_group(required=True)
+    which.add_argument("--recording", metavar="FILE", help="one .jsonl recording")
+    which.add_argument("--all", action="store_true", help="final summary for every recording")
+    potency.add_argument("--recordings-dir", help="folder for --all (default data/recordings)")
+    return parser
+
+
+def main(argv: Sequence[str] | None = None, out=None) -> int:
+    out = out or sys.stdout
+    args = build_parser().parse_args(argv)
+    cfg = load_product_config()
+    if args.all:
+        folder = Path(args.recordings_dir) if args.recordings_dir else DEFAULT_RECORDINGS_DIR
+        for path in sorted(folder.glob("*.jsonl")):
+            _print_one(path, cfg, out, detail=False)
+    else:
+        path = Path(args.recording)
+        if not path.exists():
+            print(f"recording not found: {path}", file=sys.stderr)
+            return 2
+        _print_one(path, cfg, out, detail=True)
+    print(FOOTER, file=out)
+    return 0

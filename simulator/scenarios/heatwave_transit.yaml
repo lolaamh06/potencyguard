@@ -1,10 +1,11 @@
 id: heatwave_transit
 title: Long hot leg on the road
-description: A long road leg in very hot weather. The cooling unit runs at reduced capacity for most of the leg, so the box runs warm for a long time without a sudden failure.
+description: A long road leg during which the cargo area around the box stays very hot, like a closed cargo space heated by the sun. The cooling unit runs at reduced capacity for most of the leg, so the box runs warm for a long time without a sudden failure.
 seed: 105
 duration_h: 72
 sample_interval_s: 600
 # placeholder, not sourced [SOURCE NEEDED]: temperatures, times, factors and thresholds below.
+# "ambient" is the temperature of the cargo area around the box (a sun-heated closed space).
 ambient:
   - [0, 28]
   - [24, 38]

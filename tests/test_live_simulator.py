@@ -241,8 +241,6 @@ def test_stop_spoof_and_timed_spoof_end(make_scenario, box):
         ({"type": "spoof_sensor", "mode": "hold", "reported_c": 5, "delta_c": 2}, "hold"),
         ({"type": "glitch_spike", "value_c": 900}, "value_c"),
         ({"type": "shock", "peak_g": 0}, "peak_g"),
-        ({"type": "stop_spoof"}, "no spoof"),
-        ({"type": "restore_cooling"}, "no cooling fault"),
         ({"type": "kill_cooling", "bogus": 1}, "bogus"),
         ({}, "unknown event type"),
         ("not a mapping", "mapping"),
@@ -289,3 +287,27 @@ def test_two_random_runs_differ(make_scenario, box):
     b = simulate(make_scenario(duration_h=6), box, random_seed=True)
     assert a.seed != b.seed
     assert not np.array_equal(a.reported_temp_c, b.reported_temp_c)
+
+
+# ----------------------------------------------------------------- quiet no-ops
+
+
+@pytest.mark.parametrize(
+    ("event", "note"),
+    [
+        ({"type": "stop_spoof"}, "nothing to stop"),
+        ({"type": "restore_cooling"}, "nothing to restore"),
+    ],
+)
+def test_nothing_to_undo_is_accepted_with_a_note_and_changes_nothing(
+    make_scenario, box, event, note
+):
+    control_r, control_t = _control(make_scenario, box, 40)
+    sim = _sim(make_scenario, box)
+    _run(sim, 20)
+    result = sim.inject(event)
+    assert result.accepted and result.error is None and note in result.message
+    assert result.event_id is None
+    readings, truth = _run(sim, 20)
+    assert readings == control_r[20:] and truth == control_t[20:]
+    assert sim.events() == []
