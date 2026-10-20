@@ -11,6 +11,13 @@ and OFF below setpoint - deadband/2, decided at the start of each substep. It ne
 produces the realistic wobble around the setpoint. The sample interval is split into
 ceil(interval / substep) equal substeps, so the last step is never a short leftover.
 
+Cooling duty: the fraction of the internal substeps of the interval that ended at this sample during
+which the compressor was running (decided at the start of each substep). The first sample has no
+interval behind it, so its duty is 0. The measured ambient temperature (the cargo area around the
+box) is the true value plus Gaussian noise drawn from its OWN random stream, so adding this
+channel changed none of the temperature, humidity or shock noise. A spoof changes only the
+reported box temperature; the ambient and duty channels stay honest.
+
 Order inside step(): first the physics moves from the previous sample time to this one, then the
 sample is emitted. A fault injected after sample k was emitted therefore acts on the physics
 leading to sample k + 1, and first shows in that sample.
@@ -62,13 +69,16 @@ class BoxEngine:
         rh_base_pct: float,
         noise_rng: np.random.Generator,
         events: list[EventRecord],
+        ambient_noise_rng: np.random.Generator,
     ) -> None:
         self._box = box
         self.sample_interval_s = sample_interval_s
         self._ambient_fn = ambient_fn
         self._rh_base_pct = rh_base_pct
         self._rng = noise_rng
+        self._ambient_rng = ambient_noise_rng
         self._events = events
+        self._last_duty = 0.0  # no interval has elapsed before the first sample
         self._n_sub = max(1, math.ceil(sample_interval_s / box.sim_substep_s - 1e-9))
         self._dt_s = sample_interval_s / self._n_sub
         self._decay = decay_factor(self._dt_s, box.box_tau_h * 3600.0)
@@ -107,6 +117,7 @@ class BoxEngine:
             e for e in self._events if e.kind in PHYSICAL_KINDS and e.overlaps(t_from_s, t_to_s)
         ]
         box = self._box
+        on_substeps = 0
         for k in range(self._n_sub):
             t_s = t_from_s + k * self._dt_s
             factor, heat_w, offset_c = 1.0, 0.0, 0.0
@@ -123,19 +134,27 @@ class BoxEngine:
                 self.compressor_on = True
             elif self.true_temp_c < box.box_setpoint_c - self._half_band:
                 self.compressor_on = False
+            on_substeps += self.compressor_on
             cooling_w = -(box.box_cooling_capacity_w * factor) if self.compressor_on else 0.0
             t_inf = steady_state_temp_c(
                 self._ambient_fn(t_s) + offset_c, box.box_R_th_k_per_w, heat_w + cooling_w
             )
             self.true_temp_c = step_with_decay(self.true_temp_c, t_inf, self._decay)
+        self._last_duty = on_substeps / self._n_sub
 
     def step(self) -> tuple[SensorReading, TruthSample]:
         """Advance one sample and return what the sensor reported and what was really true."""
         if self.n > 0:
             self._advance((self.n - 1) * self.sample_interval_s)
+        else:
+            self._last_duty = 0.0
         t_s = self.n * self.sample_interval_s
         box = self._box
         noise_t, noise_rh, noise_shock = self._rng.standard_normal(3)
+        # The ambient channel has its own stream, so the three draws above never change.
+        noise_ambient = self._ambient_rng.standard_normal()
+        true_ambient_c = self._ambient_c(t_s)
+        measured_ambient_c = true_ambient_c + noise_ambient * box.sensor_sigma_ambient_c
 
         true_c = self.true_temp_c
         reported = true_c + noise_t * box.sensor_sigma_c
@@ -175,17 +194,21 @@ class BoxEngine:
             rh_pct=_r(min(max(rh, 0.0), 100.0)),
             shock_g=_r(shock),
             source=SOURCE_NAME,
+            ambient_c=_r(measured_ambient_c),
+            cooling_duty=_r(self._last_duty),
         )
         truth = TruthSample(
             t_s=_r(t_s),
             true_temp_c=_r(true_c),
             reported_temp_c=reading.temp_c,
-            ambient_c=_r(self._ambient_c(t_s)),
+            ambient_c=_r(true_ambient_c),
             compressor_on=self.compressor_on,
             cooling_factor=_r(self._cooling_factor(t_s)),
             spoof_mode=spoof_mode,
             active_event_ids=[e.id for e in active],
             rh_pct=reading.rh_pct,
+            cooling_duty=reading.cooling_duty,
+            measured_ambient_c=reading.ambient_c,
         )
         self.reported_history.append(reading.temp_c)
         self.n += 1

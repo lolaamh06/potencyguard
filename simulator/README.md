@@ -55,4 +55,10 @@ $py = "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe"
 
 `live-demo` prints one line per sample and accepts typed commands while running, for example `kill_cooling`, `open_door 30`, `spoof_sensor hold 5`, `stop_spoof`. Ctrl+C stops it. `--speed` is simulated seconds per real second (default 3600; a 600 s sample then takes about 0.17 s).
 
-Recordings are written as `<id>.jsonl` (a header line, then one reading per line) and `<id>.ground_truth.json` (true temperature, compressor state, cooling factor, ambient, resolved parameters and the event history with origins). Schema version 0.2.
+Recordings are written as `<id>.jsonl` (a header line, then one reading per line) and `<id>.ground_truth.json` (true temperature, compressor state, cooling factor, ambient, resolved parameters and the event history with origins). Schema version 0.3 (adds the `ambient_c` and `cooling_duty` channels to every reading and `measured_ambient_c`, `cooling_duty` and `first_divergence_s` to the ground-truth file; the reader still accepts 0.2 files, without those fields).
+
+## Extra sensor channels and the end-of-trip rule (Phase 3)
+
+- Every reading now also carries `ambient_c` (the temperature around the box, the cargo area, with its own sensor noise from a separate random stream) and `cooling_duty` (the fraction of the interval that just ended during which the compressor ran; 0 for the first sample, which has no interval behind it). A spoof changes only `temp_c`; the other channels stay honest.
+- An event that ends exactly at the end of the trip also covers the final sample (before, a spoof that "lasted to the end" left one true-looking reading). The ground-truth file marks such events with `covers_final_sample`.
+- `python -m simulator generate-calibration` writes the clean recordings used to fit the thermal twin into `data/calibration/` (scenarios in `calibration_scenarios/`, seeds 9001 to 9010). They are never used to score detectors.

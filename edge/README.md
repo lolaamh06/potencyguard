@@ -23,3 +23,19 @@ $py = "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe"
 The first prints every 12th sample and a two-row summary (from the reported readings, and from the true temperature in the ground-truth file). `--all` prints just the two-row summary for each recording. These are simulation results on a synthetic box.
 
 The summary table also prints the simulated hour at which potency first fell below the minimum ("never" if it did not). The tracker reads the active profile by default; pass another `ProductConfig` to use the reference profile.
+
+## Thermal twin and tamper monitor (Phase 3)
+
+- `thermal_twin.py`: the physics model of the box, the physical step bound and the lag-aware lower envelope.
+- `calibration.py`: fits the twin from clean calibration runs (and refuses evaluation data).
+- `tamper_monitor.py`: the four detectors (CUSUM drift, impossible step, impossible state, flat line) and the classification into ok, thermal anomaly, sensor glitch and suspected falsification. It needs readings that carry `ambient_c` and `cooling_duty`, and it never sees ground truth.
+- `detector_config.py`: reads `config/detectors.yaml`.
+
+```
+$py = "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe"
+& $py -m edge twin --recording data/recordings/hidden_spoilage.jsonl
+& $py -m edge twin --all
+& $py -m edge calibrate
+```
+
+`twin` replays a recording through the monitor and the potency tracker together and prints the verdicts, the first alarm of each detector and, from the ground-truth file, the detection delay. Simulation results on a synthetic box.

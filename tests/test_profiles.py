@@ -59,16 +59,18 @@ SET_C = {
         0.2742156331700277,
     ),
     "shock_drop": (24.004070789167223, 24.028481511495144, 0.2740190729356989, 0.27429773414948794),
+    # The Phase 3 last-sample fix removed one stale, true-looking final reading from the reported
+    # series of spoof_attempt and hidden_spoilage, so their reported numbers are lower than in 2D.
     "spoof_attempt": (
-        69.23151207904665,
+        56.633004801398926,
         1262.1221551053814,
-        0.7903140648292997,
+        0.6464954886004444,
         14.407787158737232,
     ),
     "hidden_spoilage": (
-        155.9049252273094,
+        107.96006987861716,
         18752.949982058977,
-        1.7797365893528472,
+        1.23242088902531,
         214.07477148469152,
     ),
 }

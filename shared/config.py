@@ -80,6 +80,8 @@ class BoxConfig:
     box_deadband_c: float
     sim_substep_s: float
     door_default_power_w: float
+    sensor_sigma_ambient_c: float
+    detect_divergence_c: float
 
     @property
     def heat_capacity_j_per_k(self) -> float:
@@ -104,10 +106,16 @@ def load_box_config(path: Path | str | None = None) -> BoxConfig:
         "box_deadband_c",
         "sim_substep_s",
         "door_default_power_w",
+        "detect_divergence_c",
     ):
         if raw[name] <= 0:
             raise ConfigError(f"{name} must be greater than 0 (got {raw[name]})")
-    for name in ("sensor_sigma_c", "sensor_sigma_rh_pct", "sensor_sigma_shock_g"):
+    for name in (
+        "sensor_sigma_c",
+        "sensor_sigma_rh_pct",
+        "sensor_sigma_shock_g",
+        "sensor_sigma_ambient_c",
+    ):
         if raw[name] < 0:
             raise ConfigError(f"{name} must not be negative (got {raw[name]})")
     return BoxConfig(**{name: raw[name] for name in names})

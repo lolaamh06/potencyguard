@@ -117,6 +117,16 @@ def build_parser() -> argparse.ArgumentParser:
     which.add_argument("--recording", metavar="FILE", help="one .jsonl recording")
     which.add_argument("--all", action="store_true", help="final summary for every recording")
     potency.add_argument("--recordings-dir", help="folder for --all (default data/recordings)")
+
+    twin = sub.add_parser("twin", help="replay recordings through the thermal twin and detectors")
+    which_twin = twin.add_mutually_exclusive_group(required=True)
+    which_twin.add_argument("--recording", metavar="FILE", help="one .jsonl recording")
+    which_twin.add_argument("--all", action="store_true", help="one line per recording")
+    twin.add_argument("--verbose", action="store_true", help="print every sample")
+    twin.add_argument("--recordings-dir", help="folder for --all (default data/recordings)")
+
+    cal = sub.add_parser("calibrate", help="fit the twin from data/calibration/")
+    cal.add_argument("--calibration-dir", help="folder (default data/calibration)")
     return parser
 
 
@@ -124,6 +134,8 @@ def main(argv: Sequence[str] | None = None, out=None) -> int:
     out = out or sys.stdout
     args = build_parser().parse_args(argv)
     cfg = load_product_config()
+    if args.command in ("twin", "calibrate"):
+        return _twin_commands(args, cfg, out)
     if args.all:
         folder = Path(args.recordings_dir) if args.recordings_dir else DEFAULT_RECORDINGS_DIR
         for path in sorted(folder.glob("*.jsonl")):
@@ -135,4 +147,36 @@ def main(argv: Sequence[str] | None = None, out=None) -> int:
             return 2
         _print_one(path, cfg, out, detail=True)
     print(FOOTER, file=out)
+    return 0
+
+
+def _twin_commands(args: argparse.Namespace, cfg: ProductConfig, out) -> int:
+    from edge import twin_cli
+    from edge.thermal_twin import DEFAULT_TWIN_PATH
+    from shared.config import load_box_config
+
+    if args.command == "calibrate":
+        folder = (
+            Path(args.calibration_dir)
+            if args.calibration_dir
+            else (twin_cli.DEFAULT_CALIBRATION_DIR)
+        )
+        return twin_cli.run_calibrate(folder, DEFAULT_TWIN_PATH, out)
+    box = load_box_config()
+    if args.all:
+        folder = (
+            Path(args.recordings_dir) if args.recordings_dir else (twin_cli.DEFAULT_RECORDINGS_DIR)
+        )
+        twin_cli.print_all(folder, cfg, box, out)
+        return 0
+    path = Path(args.recording)
+    if not path.exists():
+        print(f"recording not found: {path}", file=sys.stderr)
+        return 2
+    try:
+        analysis = twin_cli.analyse(path, cfg, box)
+    except ValueError as exc:
+        print(f"cannot analyse {path.name}: {exc}", file=sys.stderr)
+        return 2
+    twin_cli.print_recording(analysis, out, args.verbose)
     return 0

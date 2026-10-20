@@ -1,9 +1,11 @@
 """LiveSimulator: one run of the box, one sample per step(), with faults injectable while it runs.
 
-Random streams (all derived from one seed with numpy SeedSequence.spawn):
+Random streams (all derived from one seed with numpy SeedSequence.spawn; the children keep their
+order, so adding a stream never changes an earlier one):
   0 sensor noise            used only inside BoxEngine, three draws per sample, always
   1 scenario parameters     draws every range once at construction
   2 free-run faults         used only by the free-run planner
+  3 ambient sensor noise    one draw per sample, for the measured ambient (cargo area) channel
 The seed is always available as .seed (and .seed_mode is "fixed" or "random"), so any run,
 even a random one, can be reproduced.
 """
@@ -68,7 +70,19 @@ def _scheduled_record(
     end_s = data.pop("end_h") * 3600.0
     if kind == KIND_SPOOF:
         data["add_noise"] = event.noise_enabled  # type: ignore[union-attr]
-    return EventRecord(event_id, type_, kind, ORIGIN_SCHEDULED, start_s, end_s, data)
+    final_s = (n_samples - 1) * interval_s
+    # An event that ends exactly at the end of the trip also covers the final sample.
+    covers_final = abs(end_s - final_s) < 1e-6
+    return EventRecord(
+        event_id,
+        type_,
+        kind,
+        ORIGIN_SCHEDULED,
+        start_s,
+        end_s,
+        data,
+        covers_final_sample=covers_final,
+    )
 
 
 def _error_text(exc: ValidationError) -> str:
@@ -86,9 +100,10 @@ class LiveSimulator:
         box: BoxConfig,
         seed: int | None = None,
     ) -> None:
+        self.detect_divergence_c = box.detect_divergence_c
         self.seed_mode = "random" if seed is None else "fixed"
         self.seed = secrets.randbits(SEED_BITS) if seed is None else int(seed)
-        noise_ss, params_ss, free_ss = np.random.SeedSequence(self.seed).spawn(3)
+        noise_ss, params_ss, free_ss, ambient_ss = np.random.SeedSequence(self.seed).spawn(4)
         self._box = box
         self._events: list[EventRecord] = []
         self._injected_count = 0
@@ -131,6 +146,7 @@ class LiveSimulator:
             rh_base,
             np.random.Generator(np.random.PCG64(noise_ss)),
             self._events,
+            np.random.Generator(np.random.PCG64(ambient_ss)),
         )
         self._last_truth: TruthSample | None = None
 
@@ -271,5 +287,7 @@ class LiveSimulator:
             params = {"peak_g": parsed.peak_g, "injected_at_s": now_s}
             record = self._new_record(type_, KIND_SHOCK, next_s, next_s + interval, params)
 
+        if self.duration_h is not None and record.end_s is not None:
+            record.covers_final_sample = abs(record.end_s - self.duration_h * 3600.0) < 1e-6
         self._events.append(record)
         return InjectionResult(True, record.id, f"{type_} applied from t={record.start_s:.0f} s")

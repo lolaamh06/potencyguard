@@ -50,9 +50,16 @@ class EventRecord:
     start_s: float
     end_s: float | None
     params: dict = field(default_factory=dict)
+    # True for an event that ends exactly at the end of the trip: it then also covers the
+    # final sample (a window is otherwise open at the start and closed at the end).
+    covers_final_sample: bool = False
 
     def active_at(self, t_s: float) -> bool:
-        return self.start_s <= t_s and (self.end_s is None or t_s < self.end_s)
+        if t_s < self.start_s:
+            return False
+        if self.end_s is None or t_s < self.end_s:
+            return True
+        return self.covers_final_sample and t_s == self.end_s
 
     def overlaps(self, t0_s: float, t1_s: float) -> bool:
         return self.start_s < t1_s and (self.end_s is None or self.end_s > t0_s)
@@ -65,6 +72,7 @@ class EventRecord:
             "origin": self.origin,
             "start_s": self.start_s,
             "end_s": self.end_s,
+            "covers_final_sample": self.covers_final_sample,
             "params": self.params,
         }
 

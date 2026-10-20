@@ -1,4 +1,4 @@
-"""Write scenario recordings: a JSONL feed plus a ground-truth sidecar (Phase 2A, schema 0.2)."""
+"""Write scenario recordings: a JSONL feed plus a ground-truth sidecar (schema 0.3)."""
 
 from __future__ import annotations
 
@@ -6,13 +6,14 @@ import json
 from pathlib import Path
 
 from shared.config import REPO_ROOT, BoxConfig
+from simulator.divergence import first_divergence_s
 from simulator.engine import SOURCE_NAME
 from simulator.events import EventRecord
 from simulator.freerun import FreeRun
 from simulator.scenario import Scenario
 from simulator.simulate import RunResult, simulate
 
-SCHEMA_VERSION = "0.2"
+SCHEMA_VERSION = "0.3"
 DEFAULT_RECORDINGS_DIR = REPO_ROOT / "data" / "recordings"
 DEFAULT_RUNS_DIR = REPO_ROOT / "data" / "runs"
 
@@ -56,6 +57,10 @@ def recording_text(result: RunResult) -> tuple[str, str]:
         "true_temp_c": [s.true_temp_c for s in result.truth],
         "reported_temp_c": [s.reported_temp_c for s in result.truth],
         "ambient_c": [s.ambient_c for s in result.truth],
+        "measured_ambient_c": [s.measured_ambient_c for s in result.truth],
+        "cooling_duty": [s.cooling_duty for s in result.truth],
+        "detect_divergence_c": result.detect_divergence_c,
+        "first_divergence_s": first_divergence_s(result.truth, result.detect_divergence_c),
         "compressor_on": [s.compressor_on for s in result.truth],
         "cooling_factor": [s.cooling_factor for s in result.truth],
         "spoof_mode": [s.spoof_mode for s in result.truth],

@@ -139,3 +139,16 @@ freerun_glitch_value_max_c: 70
 freerun_shock_prob: 0.01
 freerun_shock_peak_min_g: 6
 freerun_shock_peak_max_g: 20
+
+# ---------------------------------------------------------------------------
+# Phase 3 additions. Every value below is
+# placeholder, not sourced [SOURCE NEEDED].
+# ---------------------------------------------------------------------------
+
+# placeholder, not sourced [SOURCE NEEDED]: standard deviation of the measured ambient (cargo area)
+# temperature noise, in C. The ambient channel has its own random stream.
+sensor_sigma_ambient_c: 0.1
+
+# placeholder, not sourced [SOURCE NEEDED]: a spoof counts as "diverged" from the first sample at
+# which the reported and the true temperature differ by more than this many C.
+detect_divergence_c: 1.0

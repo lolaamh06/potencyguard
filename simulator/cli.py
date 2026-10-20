@@ -36,6 +36,9 @@ def build_parser() -> argparse.ArgumentParser:
     free.add_argument("--hours", type=float, help="trip length (default from config)")
     free.add_argument("--out-dir", help="folder for the recording (default data/runs)")
 
+    cal = sub.add_parser("generate-calibration", help="write the twin calibration recordings")
+    cal.add_argument("--out-dir", help="folder (default data/calibration)")
+
     demo = sub.add_parser("live-demo", help="watch a live run and type faults into it")
     target = demo.add_mutually_exclusive_group(required=True)
     target.add_argument("--scenario", metavar="ID", help="run one scenario live")
@@ -123,7 +126,20 @@ def _live_demo(args: argparse.Namespace) -> int:
     return 0
 
 
+def _generate_calibration(args: argparse.Namespace) -> int:
+    from simulator.calibration_set import generate_calibration
+
+    for path in generate_calibration(load_box_config(), args.out_dir):
+        print(f"wrote {path}")
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    handlers = {"generate": _generate, "freerun": _freerun, "live-demo": _live_demo}
+    handlers = {
+        "generate": _generate,
+        "freerun": _freerun,
+        "live-demo": _live_demo,
+        "generate-calibration": _generate_calibration,
+    }
     return handlers[args.command](args)

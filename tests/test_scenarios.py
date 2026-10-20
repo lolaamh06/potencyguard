@@ -212,7 +212,7 @@ def test_fixed_seed_recordings_are_byte_identical(scenario_id, box, tmp_path):
     assert header["scenario_id"] == scenario_id
     assert header["seed"] == SCENARIOS[scenario_id].seed
     assert header["seed_mode"] == "fixed"
-    assert header["schema_version"] == SCHEMA_VERSION == "0.2"
+    assert header["schema_version"] == SCHEMA_VERSION == "0.3"
     assert len(lines) == 1 + SCENARIOS[scenario_id].n_samples
 
 

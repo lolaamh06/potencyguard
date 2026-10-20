@@ -30,6 +30,7 @@ class RunResult:
     truth: list[TruthSample]
     events: list[EventRecord]
     resolved: ResolvedScenario | None
+    detect_divergence_c: float = 1.0
 
     def _series(self, name: str) -> np.ndarray:
         return np.array([getattr(s, name) for s in self.truth])
@@ -86,6 +87,7 @@ def run_to_end(sim: LiveSimulator, max_samples: int = DEFAULT_MAX_SAMPLES) -> Ru
         truth,
         sim.events(),
         sim.resolved,
+        sim.detect_divergence_c,
     )
 
 

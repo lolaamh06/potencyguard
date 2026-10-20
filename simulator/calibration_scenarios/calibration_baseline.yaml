@@ -1,0 +1,19 @@
+id: calibration_baseline
+title: Calibration run, steady cold chain
+description: A clean journey used only to fit the thermal twin. The cooling unit cycles on and off and the temperature around the box changes with the time of day. Nothing goes wrong and nothing is falsified.
+seed: 9001
+duration_h: 48
+sample_interval_s: 600
+# placeholder, not sourced [SOURCE NEEDED]: all numbers below (same profile as baseline_ok).
+ambient:
+  - [0, 20]
+  - [12, 25]
+  - [24, 19]
+  - [36, 26]
+  - [48, 21]
+ambient_jitter_c: 3
+ambient_shift_h: 3
+rh_base_pct: 45
+events: []
+expect:
+  true_within_setpoint_c: 2

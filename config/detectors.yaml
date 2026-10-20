@@ -1,0 +1,39 @@
+# Settings of the four tamper detectors (Phase 3). Simulation only.
+# Every value is placeholder, not sourced [SOURCE NEEDED].
+
+# CUSUM drift detector: reference value k and decision threshold h, in units of the residual
+# standard deviation. Chosen by the sweep in scripts/evaluate_detectors.py (rule: false alarms at
+# most the target below, then the smallest median delay; see the Phase 3 report). A test repeats
+# the selection and checks it agrees with these values.
+cusum_k: 0.25
+cusum_h: 4.0
+
+# The CUSUM statistic is capped at cusum_cap_factor * h, so an alarm clears soon after the
+# residuals return to normal instead of staying up for hundreds of samples.
+cusum_cap_factor: 2.0
+
+# Target used by the selection rule: the largest acceptable number of false CUSUM alarm
+# episodes per 1000 simulated hours on clean runs.
+cusum_false_alarm_target_per_1000h: 1.0
+
+# Impossible-step detector: tolerance added to the physical step bound, in residual std deviations.
+step_tolerance_sigma: 5.0
+
+# Heat that cannot be observed (a door held open) can pull the box temperature up faster than
+# ambient alone; this design allowance, in kelvin above ambient, widens the step bound's warm end.
+heat_allowance_c: 60.0
+
+# Impossible-state detector: the reported temperature is below the lag-aware lower envelope (the
+# coldest the box could be with full cooling all the time, from the first reading) by more than
+# margin_sigma residual std deviations, for this many samples in a row.
+state_margin_sigma: 6.0
+state_consecutive_samples: 3
+
+# Once a falsification verdict is reached it is held for at least this many samples, so the verdict
+# does not flicker while the CUSUM statistics settle.
+falsification_hold_samples: 6
+
+# Flat-line detector: window length in samples; flag when the window's standard deviation is
+# below flat_sigma_factor times the sensor noise standard deviation.
+flat_window_samples: 18
+flat_sigma_factor: 0.3

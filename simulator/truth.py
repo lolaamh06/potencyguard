@@ -19,3 +19,5 @@ class TruthSample(BaseModel):
     spoof_mode: str | None = None
     active_event_ids: list[str] = Field(default_factory=list)
     rh_pct: float
+    cooling_duty: float = 0.0
+    measured_ambient_c: float = 0.0

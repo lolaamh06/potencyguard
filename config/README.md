@@ -9,3 +9,8 @@
 - `product_default.yaml` is the ACTIVE profile and also holds the box simulator and free-run settings. Its kinetic constants (Ea/R 15000 K, shelf life 8760 h) are an illustrative heat-sensitive biologic profile: placeholder, not sourced [SOURCE NEEDED]; replace with the manufacturer's stability data.
 - `product_team_document.yaml` is the REFERENCE profile (Ea/R 10000 K, shelf life 17520 h), taken from the team document and not independently verified by us [SOURCE NEEDED]. It keeps the document's worked examples verifiable. A test checks that every other key matches the active file.
 - Load either one by path: `load_product_config("config/product_team_document.yaml")`.
+
+## Twin and detector settings (Phase 3)
+
+- `twin_calibrated.yaml`: the thermal twin fitted from `data/calibration/` (time constant, cooling depression, residual spread). Simulation only; regenerate with `python -m edge calibrate`.
+- `detectors.yaml`: settings of the four tamper detectors. Every value is a placeholder [SOURCE NEEDED]; the CUSUM values come from the sweep in `scripts/evaluate_detectors.py`.

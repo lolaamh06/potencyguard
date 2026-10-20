@@ -9,7 +9,10 @@ from typing import IO
 from edge.sensor_reading import SensorReading
 from edge.sensor_source import SensorSource
 
-SUPPORTED_SCHEMA_VERSION = "0.2"
+# 0.3 adds the ambient_c and cooling_duty channels. 0.2 files are still read; those two fields are
+# then None (the thermal twin needs them and will say so).
+SUPPORTED_SCHEMA_VERSIONS = ("0.2", "0.3")
+SUPPORTED_SCHEMA_VERSION = SUPPORTED_SCHEMA_VERSIONS[-1]
 
 
 class RecordedSource(SensorSource):
@@ -28,10 +31,10 @@ class RecordedSource(SensorSource):
         header = json.loads(first)
         if header.get("type") != "header":
             raise ValueError(f"recording {self._path} must start with a header line")
-        if header.get("schema_version") != SUPPORTED_SCHEMA_VERSION:
+        if header.get("schema_version") not in SUPPORTED_SCHEMA_VERSIONS:
             raise ValueError(
                 f"unsupported schema_version {header.get('schema_version')!r} in {self._path}; "
-                f"this reader needs {SUPPORTED_SCHEMA_VERSION}. Regenerate the recording."
+                f"this reader needs one of {SUPPORTED_SCHEMA_VERSIONS}. Regenerate the recording."
             )
         self.header = header
 

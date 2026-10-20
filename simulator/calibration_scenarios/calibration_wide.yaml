@@ -1,0 +1,22 @@
+id: calibration_wide
+title: Calibration run, wide swings
+description: A clean journey used only to fit the thermal twin. The temperature around the box swings from cool to very hot and back several times, so the cooling unit runs anywhere from not at all to flat out. Nothing goes wrong and nothing is falsified.
+seed: 9006
+duration_h: 48
+sample_interval_s: 600
+# placeholder, not sourced [SOURCE NEEDED]: all numbers below. The swings are wide on purpose, so
+# the fit can tell the effect of the temperature around the box from the effect of the cooling.
+ambient:
+  - [0, 10]
+  - [6, 36]
+  - [12, 14]
+  - [18, 38]
+  - [24, 8]
+  - [30, 34]
+  - [36, 16]
+  - [42, 38]
+  - [48, 10]
+ambient_jitter_c: 2
+ambient_shift_h: 2
+rh_base_pct: 45
+events: []

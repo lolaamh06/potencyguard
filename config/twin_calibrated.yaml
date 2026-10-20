@@ -1,0 +1,19 @@
+# Fitted from data/calibration/, simulation only. Not real-world evidence.
+# placeholder, not sourced [SOURCE NEEDED]: these numbers describe the synthetic box.
+# Regenerate with: python -m edge calibrate
+fit_date: 2026-10-20
+calibration_seeds: [9001, 9002, 9003, 9004, 9005, 9006, 9007, 9008, 9009, 9010]
+calibration_files: [calibration_baseline_9001.jsonl, calibration_baseline_9002.jsonl, calibration_baseline_9003.jsonl, calibration_baseline_9004.jsonl, calibration_baseline_9005.jsonl, calibration_wide_9006.jsonl, calibration_wide_9007.jsonl, calibration_wide_9008.jsonl, calibration_wide_9009.jsonl, calibration_wide_9010.jsonl]
+estimator: restricted least squares on the increment (see edge/calibration.py)
+n_intervals: 2880
+sample_interval_s: 600
+tau_h: 5.983582815740587
+dT_cool_c: 29.849249709854597
+sigma_r_c: 0.06871824386803736
+r_squared: 0.9276356458072459
+condition_number: 1.5863944509010466
+fit_intercept_d: -0.0027062185064478106
+# Unrestricted fit, kept only as a diagnostic (biased by measurement noise in T[n]):
+unrestricted_tau_h: 1.803138650027967
+unrestricted_dT_cool_c: 9.002120476552093
+unrestricted_b_minus_expected: -0.06132798911192976

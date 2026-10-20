@@ -52,10 +52,15 @@ def test_set_a_reproduces_the_phase_2b_report(study):
     assert len(rows) == 8
     set_a = study["sets"]["A"]["scenarios"]
     for scenario_id, (r_tau, _r_p, r_used, _r_mkt, t_tau, _t_p, t_used, _t_mkt) in rows.items():
-        assert set_a[scenario_id]["reported"]["tau_eq_h"] == pytest.approx(r_tau, abs=0.01)
         assert set_a[scenario_id]["true"]["tau_eq_h"] == pytest.approx(t_tau, abs=0.01)
-        assert set_a[scenario_id]["reported"]["used_percent"] == pytest.approx(r_used, abs=0.001)
         assert set_a[scenario_id]["true"]["used_percent"] == pytest.approx(t_used, abs=0.001)
+        if scenario_id == "spoof_attempt":
+            # Phase 3 fixed the end-of-trip coverage of spoofs: the old final reading (a true-
+            # looking 29 C) is now falsified like the rest, so the reported series lost it.
+            assert set_a[scenario_id]["reported"]["tau_eq_h"] < r_tau
+            continue
+        assert set_a[scenario_id]["reported"]["tau_eq_h"] == pytest.approx(r_tau, abs=0.01)
+        assert set_a[scenario_id]["reported"]["used_percent"] == pytest.approx(r_used, abs=0.001)
 
 
 def test_every_set_yields_finite_numbers_for_all_recordings(study):
