@@ -1,0 +1,14 @@
+id: freeze_event
+title: Freezing night on the road
+description: A very cold stretch of the route lets the box fall below freezing. Cold-chain cooling does not warm the box back up, so the contents freeze.
+seed: 104
+duration_h: 36
+sample_interval_s: 600
+ambient:
+  - [0, 15]
+  - [8, 10]
+  - [12, -12]
+  - [30, -12]
+  - [36, 0]
+rh_base_pct: 45
+events: []

@@ -1,0 +1,20 @@
+id: spoof_attempt
+title: Reported temperature falsified
+description: The cooling stops and the box really warms, but from some point on the reported temperature is falsified to look cold. The injected values do not follow the physics of the box.
+seed: 106
+duration_h: 36
+sample_interval_s: 600
+ambient:
+  - [0, 22]
+  - [10, 30]
+  - [36, 30]
+rh_base_pct: 45
+events:
+  - type: cooling_factor
+    start_h: 10
+    end_h: 36
+    factor: 0.0
+  - type: spoof
+    start_h: 12
+    end_h: 36
+    reported_c: 5.0

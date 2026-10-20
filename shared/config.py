@@ -8,8 +8,8 @@ from pathlib import Path
 
 import yaml
 
-_REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_CONFIG_PATH = _REPO_ROOT / "config" / "product_default.yaml"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_CONFIG_PATH = REPO_ROOT / "config" / "product_default.yaml"
 _KELVIN_OFFSET = 273.15
 
 
@@ -50,8 +50,7 @@ def _is_integer(value: object) -> bool:
     return isinstance(value, int) and not isinstance(value, bool)
 
 
-def load_product_config(path: Path | str | None = None) -> ProductConfig:
-    """Load and validate a product config; default is config/product_default.yaml."""
+def _read_yaml_mapping(path: Path | str | None) -> dict:
     config_path = Path(path) if path is not None else DEFAULT_CONFIG_PATH
     try:
         raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
@@ -61,6 +60,52 @@ def load_product_config(path: Path | str | None = None) -> ProductConfig:
         raise ConfigError(f"config file {config_path} is not valid YAML: {exc}") from exc
     if not isinstance(raw, dict):
         raise ConfigError(f"config file {config_path} must contain key: value pairs")
+    return raw
+
+
+@dataclass(frozen=True)
+class BoxConfig:
+    """Synthetic insulated box and sensor-noise parameters (master brief section 3.3).
+
+    Placeholder values, not sourced [SOURCE NEEDED]; see config/product_default.yaml.
+    """
+
+    box_R_th_k_per_w: float
+    box_tau_h: float
+    box_setpoint_c: float
+    box_cooling_capacity_w: float
+    sensor_sigma_c: float
+    sensor_sigma_rh_pct: float
+    sensor_sigma_shock_g: float
+
+    @property
+    def heat_capacity_j_per_k(self) -> float:
+        """C = tau / R_th, converted from hours to seconds."""
+        return self.box_tau_h * 3600.0 / self.box_R_th_k_per_w
+
+
+def load_box_config(path: Path | str | None = None) -> BoxConfig:
+    """Load and validate the box simulator parameters from the same YAML file."""
+    raw = _read_yaml_mapping(path)
+    names = [f.name for f in fields(BoxConfig)]
+    missing = [name for name in names if name not in raw]
+    if missing:
+        raise ConfigError(f"missing config keys: {', '.join(missing)}")
+    for name in names:
+        if not _is_number(raw[name]):
+            raise ConfigError(f"{name} must be a number (got {raw[name]!r})")
+    for name in ("box_R_th_k_per_w", "box_tau_h", "box_cooling_capacity_w"):
+        if raw[name] <= 0:
+            raise ConfigError(f"{name} must be greater than 0 (got {raw[name]})")
+    for name in ("sensor_sigma_c", "sensor_sigma_rh_pct", "sensor_sigma_shock_g"):
+        if raw[name] < 0:
+            raise ConfigError(f"{name} must not be negative (got {raw[name]})")
+    return BoxConfig(**{name: raw[name] for name in names})
+
+
+def load_product_config(path: Path | str | None = None) -> ProductConfig:
+    """Load and validate a product config; default is config/product_default.yaml."""
+    raw = _read_yaml_mapping(path)
 
     names = [f.name for f in fields(ProductConfig)]
     missing = [name for name in names if name not in raw]

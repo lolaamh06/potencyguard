@@ -34,7 +34,7 @@ Open a fresh PowerShell window in the repo root.
    `& "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe" -m pip install -r requirements-dev.txt`
 3. Install the project itself in editable mode:
    `& "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe" -m pip install -e .`
-4. Dashboard dependencies. If the repo is inside OneDrive, first make `dashboard\node_modules` a junction to `%LOCALAPPDATA%\potencyguard\dashboard-node_modules` (see CLAUDE.md, rule 10), then:
+4. Dashboard dependencies. If the repo is inside OneDrive, first make `dashboard\node_modules` a junction to `%LOCALAPPDATA%\potencyguard\dashboard-node_modules\node_modules` (see CLAUDE.md, rule 10 and dashboard/README.md). npm install or npm ci REPLACES the junction with a real folder inside OneDrive; only run them when a phase says so, then follow the recovery steps. Then:
    `cd dashboard`
    `npm install`
 

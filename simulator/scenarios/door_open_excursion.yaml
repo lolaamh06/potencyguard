@@ -1,0 +1,16 @@
+id: door_open_excursion
+title: Door held open, short warm excursion
+description: The box door is held open for a while at a warm loading area. The inside warms for a few hours and then recovers once the door is closed and the cooling catches up.
+seed: 102
+duration_h: 24
+sample_interval_s: 600
+ambient:
+  - [0, 22]
+  - [24, 22]
+rh_base_pct: 45
+events:
+  - type: heat_load
+    start_h: 6
+    end_h: 7
+    power_w: 100
+    rh_delta_pct: 15

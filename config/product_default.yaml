@@ -27,3 +27,32 @@ alpha: 0.95
 
 # ASSUMPTION: number of random future scenarios per action in the planner.
 monte_carlo_n: 5000
+
+# ---------------------------------------------------------------------------
+# Box simulator parameters (Phase 1).
+# placeholder, not sourced [SOURCE NEEDED]: every value in this block is a made-up
+# demonstration value for a synthetic insulated box, not a measurement of any real box.
+# ---------------------------------------------------------------------------
+
+# placeholder, not sourced [SOURCE NEEDED]: thermal resistance of the box wall, kelvin per watt.
+box_R_th_k_per_w: 0.5
+
+# placeholder, not sourced [SOURCE NEEDED]: thermal time constant tau = R_th * C, in hours.
+# The heat capacity C follows as tau / R_th.
+box_tau_h: 6.0
+
+# placeholder, not sourced [SOURCE NEEDED]: temperature the cooling control tries to hold, in C.
+box_setpoint_c: 5.0
+
+# placeholder, not sourced [SOURCE NEEDED]: largest cooling power Q (as a positive number, watts).
+# The control never heats; cooling is a negative Q in the model.
+box_cooling_capacity_w: 60.0
+
+# placeholder, not sourced [SOURCE NEEDED]: standard deviation of temperature sensor noise, in C.
+sensor_sigma_c: 0.05
+
+# placeholder, not sourced [SOURCE NEEDED]: standard deviation of humidity sensor noise, in % RH.
+sensor_sigma_rh_pct: 0.5
+
+# placeholder, not sourced [SOURCE NEEDED]: standard deviation of the baseline shock noise, in g.
+sensor_sigma_shock_g: 0.01

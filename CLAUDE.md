@@ -9,7 +9,7 @@
 7. Never write the words "first", "unique" or "novel" about a component. Never put external statistics in code, docs or UI; write [SOURCE NEEDED] instead.
 8. All maths is deterministic code. An LLM never computes or changes a number.
 9. Environment (Windows, PowerShell): use the venv's python by full path: %LOCALAPPDATA%\potencyguard\venv\Scripts\python.exe. Do not change the PowerShell execution policy. Write helper scripts in Python or PowerShell-compatible commands.
-10. OneDrive: the repo may sit inside OneDrive. Never create a venv inside the repo. dashboard/node_modules must be a junction to %LOCALAPPDATA%\potencyguard\dashboard-node_modules when the repo is inside OneDrive. Report any "file in use" or sync problem.
+10. OneDrive: the repo may sit inside OneDrive. Never create a venv inside the repo. dashboard/node_modules must be a junction to %LOCALAPPDATA%\potencyguard\dashboard-node_modules\node_modules when the repo is inside OneDrive. Report any "file in use" or sync problem. WARNING: npm install or npm ci REPLACES the junction with a real folder inside OneDrive. Only run them when a phase says so, then follow the recovery steps in dashboard/README.md.
 11. Never commit secrets. Keys, tokens and .env files are git-ignored. If you find a secret in the repo, stop and report.
 12. Every phase ends with a report in docs/02-phase-reports/ (template in master brief section 11.1) and a plain-English summary in the final message. Then stop and wait for the next phase prompt.
 13. Archive each phase prompt text in docs/06-prompts/ at the end of the phase.

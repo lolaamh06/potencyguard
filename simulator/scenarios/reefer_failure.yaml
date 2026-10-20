@@ -1,0 +1,18 @@
+id: reefer_failure
+title: Cooling failure on a hot day
+description: The cooling unit stops working part way through a hot day. The box warms steadily and keeps warming until it is well beyond its allowed range.
+seed: 103
+duration_h: 36
+sample_interval_s: 600
+ambient:
+  - [0, 22]
+  - [10, 32]
+  - [20, 44]
+  - [30, 46]
+  - [36, 42]
+rh_base_pct: 45
+events:
+  - type: cooling_factor
+    start_h: 10
+    end_h: 36
+    factor: 0.0

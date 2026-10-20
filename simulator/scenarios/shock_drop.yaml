@@ -1,0 +1,15 @@
+id: shock_drop
+title: Box dropped once
+description: A normal journey in which the box takes one large knock. Temperatures are not affected.
+seed: 108
+duration_h: 24
+sample_interval_s: 600
+ambient:
+  - [0, 20]
+  - [12, 24]
+  - [24, 20]
+rh_base_pct: 45
+events:
+  - type: shock
+    at_h: 8
+    peak_g: 15.0
