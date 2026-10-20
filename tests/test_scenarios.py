@@ -30,6 +30,7 @@ EXPECTED_IDS = {
     "spoof_attempt",
     "sensor_glitch",
     "shock_drop",
+    "hidden_spoilage",
 }
 SEEDS_PER_SCENARIO = 200
 
@@ -43,7 +44,7 @@ def _truth_file(scenario_id, box, tmp_path) -> dict:
     return json.loads(truth_path.read_text(encoding="utf-8"))
 
 
-def test_all_eight_scenarios_exist():
+def test_all_nine_scenarios_exist():
     assert set(SCENARIOS) == EXPECTED_IDS
 
 
@@ -227,7 +228,7 @@ def test_committed_recordings_match_the_generator(scenario_id, box, tmp_path):
         assert _sha(new) == _sha(old)
 
 
-def test_golden_folder_holds_exactly_the_eight_scenarios():
+def test_golden_folder_holds_exactly_the_nine_scenarios():
     names = sorted(p.name for p in DEFAULT_RECORDINGS_DIR.iterdir() if p.name != "README.md")
     expected = sorted(
         [f"{i}.jsonl" for i in EXPECTED_IDS] + [f"{i}.ground_truth.json" for i in EXPECTED_IDS]

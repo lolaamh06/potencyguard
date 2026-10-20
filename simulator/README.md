@@ -18,6 +18,8 @@
 
 Any number in an event may be a range `{min: a, max: b}`; it is drawn once per run. The start range must end before the end range begins. Optional `ambient_jitter_c` and `ambient_shift_h` randomise the whole profile of the temperature around the box (the cargo area) (the shift moves the profile later; values outside the keyframes are held constant). The `expect:` block lists guarantees that must hold for every seed (see `expectations.py`); thresholds may name product limits such as `hard_limit_high_c`.
 
+There are nine scenarios: baseline_ok, door_open_excursion, reefer_failure, freeze_event, heatwave_transit, spoof_attempt, sensor_glitch, shock_drop and hidden_spoilage (a multi-day trip where weak cooling spoils the box slowly while the reported temperature is falsified; its potency guarantees are checked in `tests/test_hidden_spoilage.py`, because the simulator does not import the edge package).
+
 Event types in scenario files: `heat_load`, `cooling_factor`, `ambient_offset`, `spoof` (modes `hold`, `offset`, `replay`), `glitch`, `shock`.
 
 ## Faults you can inject while a run is going

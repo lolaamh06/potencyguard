@@ -39,7 +39,10 @@ CANDIDATES: dict[str, dict[str, float]] = {
     "D": {"Ea_over_R": 20000, "tau_max_h": 8760},
     "E": {"Ea_over_R": 15000, "tau_max_h": 4380},
 }
-SET_NOTES = {"A": "current configuration"}
+SET_NOTES = {
+    "A": "the team-document values, now the reference profile",
+    "C": "chosen as the active profile in Phase 2D",
+}
 
 
 def make_variant(base: ProductConfig, values: dict[str, float]) -> ProductConfig:
@@ -151,9 +154,11 @@ def render_markdown(study: dict) -> str:
         "## What this is",
         "",
         "The potency model has a few made-up product constants: how fast damage grows with "
-        "temperature (Ea/R) and how long the shelf life is (tau_max). With the current values "
-        "(set A) even the worst golden recording leaves potency near 99 percent, so a pitch has "
-        "little to show. This study re-runs the same eight recordings through the same tracker "
+        "temperature (Ea/R) and how long the shelf life is (tau_max). With the values used before "
+        "Phase 2D (set A, now the reference profile) even the worst golden recording leaves "
+        "potency near 99 percent, so a pitch has little to show. This study re-runs the same "
+        "golden recordings (eight when the study was made; Phase 2D added hidden_spoilage) "
+        "through the same tracker "
         "with five illustrative sets of constants and prints what each would show. Nothing in the "
         "real configuration was changed. Every candidate value is a placeholder, not sourced "
         "[SOURCE NEEDED], and none describes a real product. T_ref (5 C) and P_min (0.90) are the "

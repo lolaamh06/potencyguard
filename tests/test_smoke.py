@@ -34,16 +34,16 @@ def test_packages_import():
 
 def test_default_config_loads():
     cfg = load_product_config()
-    assert cfg.Ea_over_R == 10000
+    assert cfg.Ea_over_R == 15000
     assert cfg.T_ref_c == 5.0
-    assert cfg.tau_max_h == 17520
+    assert cfg.tau_max_h == 8760
     assert cfg.P_min == 0.90
     assert cfg.hard_limit_low_c == 0.0
     assert cfg.hard_limit_high_c == 40.0
     assert cfg.hard_limit_consecutive_samples == 2
     assert cfg.alpha == 0.95
     assert cfg.monte_carlo_n == 5000
-    assert cfg.k_ref_per_h == pytest.approx(6.0137e-06, rel=1e-4)
+    assert cfg.k_ref_per_h == pytest.approx(1.20275e-05, rel=1e-4)  # ln(1/0.9)/8760
     assert cfg.T_ref_k == pytest.approx(278.15)
 
 

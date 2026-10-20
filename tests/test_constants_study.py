@@ -61,7 +61,7 @@ def test_set_a_reproduces_the_phase_2b_report(study):
 def test_every_set_yields_finite_numbers_for_all_recordings(study):
     assert set(study["sets"]) == {"A", "B", "C", "D", "E"}
     for name, data in study["sets"].items():
-        assert len(data["scenarios"]) == 8, name
+        assert len(data["scenarios"]) == 9, name  # eight originals plus hidden_spoilage
         for key in (
             "days_lost_per_day_at_25c",
             "days_lost_per_day_at_40c",
@@ -96,7 +96,7 @@ def test_the_study_does_not_modify_the_loaded_config():
     assert (cfg, cfg.k_ref_per_h) == snapshot
     assert load_product_config() == cfg
     variant = STUDY_MODULE.make_variant(cfg, {"Ea_over_R": 20000})
-    assert variant.Ea_over_R == 20000 and cfg.Ea_over_R == 10000
+    assert variant.Ea_over_R == 20000 and cfg.Ea_over_R == 15000  # the active profile is untouched
 
 
 def test_the_yaml_file_is_byte_identical_after_the_study(tmp_path):
@@ -117,3 +117,11 @@ def test_the_committed_study_document_matches_a_fresh_run(study):
         encoding="utf-8"
     )
     assert committed == STUDY_MODULE.render_markdown(study) + "\n"
+
+
+def test_the_active_default_equals_set_c(study):
+    cfg = load_product_config()
+    set_c = STUDY_MODULE.CANDIDATES["C"]
+    assert (cfg.Ea_over_R, cfg.tau_max_h) == (set_c["Ea_over_R"], set_c["tau_max_h"])
+    assert study["sets"]["C"]["Ea_over_R"] == cfg.Ea_over_R
+    assert study["sets"]["C"]["tau_max_h"] == cfg.tau_max_h

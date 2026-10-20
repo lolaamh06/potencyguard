@@ -1,14 +1,17 @@
 # Synthetic product parameters for an imaginary 2 to 8 C vaccine. Not real product data.
+# ACTIVE PROFILE: illustrative heat-sensitive biologic profile (decision 0004, amendment A15).
+# The team document's original values are kept in config/product_team_document.yaml.
 
 # Activation energy divided by the gas constant, in kelvin.
-# Source: USP default Ea = 83.144 kJ/mol, R = 8.314 J/(mol K).
-Ea_over_R: 10000
+# placeholder, not sourced [SOURCE NEEDED]; illustrative profile; replace with the manufacturer's stability data.
+Ea_over_R: 15000
 
 # ASSUMPTION: storage reference temperature (middle of the 2 to 8 C range is about 5 C).
 T_ref_c: 5.0
 
-# Shelf life at the reference temperature: 24 months, from the project document.
-tau_max_h: 17520
+# Shelf life at the reference temperature: 12 months.
+# placeholder, not sourced [SOURCE NEEDED]; illustrative profile; replace with the manufacturer's stability data.
+tau_max_h: 8760
 
 # ASSUMPTION: lowest acceptable potency (90% of original strength).
 P_min: 0.90

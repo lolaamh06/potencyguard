@@ -1,0 +1,37 @@
+id: hidden_spoilage
+title: Slow spoilage behind a falsified sensor
+description: A multi-day trip through a very hot cargo area, like a closed cargo space heated by the sun. The cooling unit is weak for most of the trip but never stops completely. From a few hours after the weakness begins, the reported temperature is falsified to look cold. The box slowly spoils while the reported readings look perfect.
+seed: 109
+duration_h: 96
+sample_interval_s: 600
+# placeholder, not sourced [SOURCE NEEDED]: every temperature, time, factor and threshold below.
+# "ambient" is the temperature of the cargo area around the box (a sun-heated closed space).
+# The numbers were tuned with the real simulator and tracker so that, with the active product
+# profile, the true series crosses the minimum potency between hours 48 and 90 for every seed
+# while the reported series stays clean (tests/test_hidden_spoilage.py checks 200 seeds).
+ambient:
+  - [0, 24]
+  - [12, 40]
+  - [24, 46]
+  - [96, 46]
+ambient_jitter_c: 1
+ambient_shift_h: 2
+rh_base_pct: 45
+events:
+  # the cooling unit becomes weak and stays weak to the end of the trip
+  - type: cooling_factor
+    start_h: {min: 12, max: 18}
+    end_h: 96
+    factor: {min: 0.24, max: 0.38}
+  # a few hours later the reported temperature is held near the setpoint to the end
+  - type: spoof
+    start_h: {min: 20, max: 26}
+    end_h: 96
+    mode: hold
+    reported_c: {min: 4, max: 6}
+    add_noise: true
+expect:
+  true_max_c_gt: 25
+  true_max_c_lt: 45
+  reported_true_gap_c_gt: 15
+  spoof_begins_after_failure: true

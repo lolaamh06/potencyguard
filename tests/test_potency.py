@@ -17,8 +17,15 @@ from edge.potency import (
 )
 
 ROOT = Path(__file__).resolve().parent.parent
-VECTORS_PATH = ROOT / "shared" / "test-vectors" / "potency_vectors.json"
-VECTORS = json.loads(VECTORS_PATH.read_text(encoding="utf-8"))
+VECTORS_DIR = ROOT / "shared" / "test-vectors"
+ACTIVE_PATH = VECTORS_DIR / "potency_vectors.json"
+REFERENCE_PATH = VECTORS_DIR / "potency_vectors_team_document.json"
+VECTORS = json.loads(ACTIVE_PATH.read_text(encoding="utf-8"))  # active default profile
+REFERENCE_VECTORS = json.loads(REFERENCE_PATH.read_text(encoding="utf-8"))  # team document profile
+BOTH = [
+    ("potency_vectors.json", VECTORS),
+    ("potency_vectors_team_document.json", REFERENCE_VECTORS),
+]
 KELVIN = 273.15
 
 
@@ -29,8 +36,14 @@ def _af(temp_c, product):
 # ----------------------------------------------------------------- document checks
 
 
-@pytest.mark.parametrize("check", VECTORS["document_checks"], ids=lambda c: c["description"])
-def test_worked_examples_match_the_document_at_its_precision(check, product):
+# The document's numbers belong to the REFERENCE profile (the team document's constants).
+
+
+@pytest.mark.parametrize(
+    "check", REFERENCE_VECTORS["document_checks"], ids=lambda c: c["description"]
+)
+def test_worked_examples_match_the_document_at_its_precision(check, reference_product):
+    product = reference_product
     af = arrhenius_acceleration_factor(check["temp_c"], product)
     tau_eq = equivalent_reference_time_h([check["temp_c"]], [check["hours"]], product)
     computed = {
@@ -41,8 +54,9 @@ def test_worked_examples_match_the_document_at_its_precision(check, product):
     assert round(computed, check["rounding_decimals"]) == check["expected_rounded"]
 
 
-def test_older_brief_values_also_match_at_their_precision(product):
+def test_older_brief_values_also_match_at_their_precision(reference_product):
     # Brief section 3.2: 8 h at 12 C and 24 h at 30 C, within the 1% tolerance given there.
+    product = reference_product
     assert arrhenius_acceleration_factor(12, product) == pytest.approx(2.42, rel=0.01)
     assert equivalent_reference_time_h([12], [8], product) == pytest.approx(19.3, rel=0.01)
     assert arrhenius_acceleration_factor(30, product) == pytest.approx(19.4, rel=0.01)
@@ -50,6 +64,16 @@ def test_older_brief_values_also_match_at_their_precision(product):
     assert shelf_life_used_fraction(
         equivalent_reference_time_h([12], [8], product), product
     ) * 100 == (pytest.approx(0.11, rel=0.01))
+
+
+def test_active_profile_has_the_chosen_constants_and_closed_forms(product):
+    assert product.Ea_over_R == 15000 and product.tau_max_h == 8760
+    assert product.T_ref_c == 5.0 and product.P_min == 0.90
+    for temp_c in (12.0, 40.0):
+        closed = math.exp(15000 * (1 / 278.15 - 1 / (temp_c + 273.15)))
+        assert arrhenius_acceleration_factor(temp_c, product) == pytest.approx(closed, rel=1e-14)
+    assert product.k_ref_per_h == pytest.approx(math.log(1 / 0.90) / 8760, rel=1e-14)
+    assert potency_from_tau_eq(8760.0, product) == pytest.approx(0.90, rel=1e-14)
 
 
 # ----------------------------------------------------------------- acceleration factor
@@ -212,43 +236,68 @@ def test_bad_tau_eq_is_rejected(product):
 # ----------------------------------------------------------------- shared vectors (pure part)
 
 
-def test_vector_constants_match_the_config(product):
-    constants = VECTORS["meta"]["constants"]
-    assert constants["Ea_over_R"] == product.Ea_over_R
-    assert constants["tau_max_h"] == product.tau_max_h
-    assert constants["P_min"] == product.P_min
-    assert constants["hard_limit_consecutive_samples"] == product.hard_limit_consecutive_samples
+PROFILE_FIXTURE = {
+    "potency_vectors.json": "product",
+    "potency_vectors_team_document.json": "reference_product",
+}
+AF_CASES = [(name, case) for name, doc in BOTH for case in doc["af_cases"]]
+TAU_CASES = [(name, case) for name, doc in BOTH for case in doc["tau_cases"]]
 
 
-@pytest.mark.parametrize("case", VECTORS["af_cases"], ids=lambda c: str(c["temp_c"]))
-def test_af_vectors(case, product):
-    assert arrhenius_acceleration_factor(case["temp_c"], product) == pytest.approx(
+@pytest.mark.parametrize(("name", "document"), BOTH)
+def test_vector_constants_match_the_profile_they_name(name, document, request):
+    cfg = request.getfixturevalue(PROFILE_FIXTURE[name])
+    constants = document["meta"]["constants"]
+    assert constants["Ea_over_R"] == cfg.Ea_over_R
+    assert constants["tau_max_h"] == cfg.tau_max_h
+    assert constants["P_min"] == cfg.P_min
+    assert constants["hard_limit_consecutive_samples"] == cfg.hard_limit_consecutive_samples
+    assert "[SOURCE NEEDED]" in document["meta"]["profile"]
+
+
+def test_the_two_vector_files_hold_the_two_profiles():
+    assert VECTORS["meta"]["constants"]["Ea_over_R"] == 15000
+    assert REFERENCE_VECTORS["meta"]["constants"]["Ea_over_R"] == 10000
+    assert "document_checks" in REFERENCE_VECTORS and "document_checks" not in VECTORS
+
+
+@pytest.mark.parametrize(
+    ("name", "case"), AF_CASES, ids=lambda v: v if isinstance(v, str) else str(v["temp_c"])
+)
+def test_af_vectors(name, case, request):
+    cfg = request.getfixturevalue(PROFILE_FIXTURE[name])
+    assert arrhenius_acceleration_factor(case["temp_c"], cfg) == pytest.approx(
         case["expected_af"], rel=1e-12
     )
 
 
-@pytest.mark.parametrize("case", VECTORS["tau_cases"], ids=lambda c: c["name"])
-def test_tau_vectors(case, product):
-    tau_eq = equivalent_reference_time_h(case["temps_c"], case["dts_h"], product)
+@pytest.mark.parametrize(
+    ("name", "case"), TAU_CASES, ids=lambda v: v if isinstance(v, str) else v["name"]
+)
+def test_tau_vectors(name, case, request):
+    cfg = request.getfixturevalue(PROFILE_FIXTURE[name])
+    tau_eq = equivalent_reference_time_h(case["temps_c"], case["dts_h"], cfg)
     assert tau_eq == pytest.approx(case["expected_tau_eq_h"], rel=1e-12)
-    assert potency_from_tau_eq(tau_eq, product) == pytest.approx(
-        case["expected_potency"], rel=1e-12
-    )
-    assert shelf_life_used_fraction(tau_eq, product) == pytest.approx(
+    assert potency_from_tau_eq(tau_eq, cfg) == pytest.approx(case["expected_potency"], rel=1e-12)
+    assert shelf_life_used_fraction(tau_eq, cfg) == pytest.approx(
         case["expected_shelf_life_used_fraction"], rel=1e-12
     )
-    assert time_weighted_mkt_c(case["temps_c"], case["dts_h"], product) == pytest.approx(
+    assert time_weighted_mkt_c(case["temps_c"], case["dts_h"], cfg) == pytest.approx(
         case["expected_mkt_c"], rel=1e-12
     )
 
 
-def test_committed_vectors_equal_a_fresh_generation():
+def test_committed_vectors_equal_a_fresh_generation_for_both_profiles():
     spec = importlib.util.spec_from_file_location(
         "make_test_vectors", ROOT / "scripts" / "make_test_vectors.py"
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    assert module.render(module.build_vectors()) == VECTORS_PATH.read_text(encoding="utf-8")
+    fresh = module.build_all()
+    assert set(fresh) == {"potency_vectors.json", "potency_vectors_team_document.json"}
+    for name, vectors in fresh.items():
+        committed = (VECTORS_DIR / name).read_text(encoding="utf-8")
+        assert module.render(vectors) == committed, name
 
 
 # ----------------------------------------------------------------- config validation
@@ -257,8 +306,8 @@ def test_committed_vectors_equal_a_fresh_generation():
 @pytest.mark.parametrize(
     ("old", "new", "key"),
     [
-        ("Ea_over_R: 10000", "Ea_over_R: 0", "Ea_over_R"),
-        ("tau_max_h: 17520", "tau_max_h: -5", "tau_max_h"),
+        ("Ea_over_R: 15000", "Ea_over_R: 0", "Ea_over_R"),
+        ("tau_max_h: 8760", "tau_max_h: -5", "tau_max_h"),
         ("P_min: 0.90", "P_min: 1.0", "P_min"),
         ("hard_limit_low_c: 0.0", "hard_limit_low_c: 50.0", "hard_limit_low_c"),
         ("hard_limit_consecutive_samples: 2", "hard_limit_consecutive_samples: 0", "consecutive"),

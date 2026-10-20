@@ -1,0 +1,36 @@
+# Reference profile: values taken from the team's source document. Source of the kinetic constants
+# not independently verified by us [SOURCE NEEDED]. Kept so the document's worked examples stay verifiable.
+# Synthetic product parameters for an imaginary 2 to 8 C vaccine. Not real product data.
+#
+# This file holds ONLY the product section. The box simulator and free-run settings are read from
+# config/product_default.yaml. A test checks that every key here except the two kinetic constants
+# equals the same key in product_default.yaml, so the two files cannot drift apart.
+
+# Activation energy divided by the gas constant, in kelvin.
+# As stated in the team document: USP default Ea = 83.144 kJ/mol, R = 8.314 J/(mol K).
+# We have not traced or verified that source [SOURCE NEEDED].
+Ea_over_R: 10000
+
+# ASSUMPTION: storage reference temperature (middle of the 2 to 8 C range is about 5 C).
+T_ref_c: 5.0
+
+# Shelf life at the reference temperature: 24 months, as stated in the team document.
+tau_max_h: 17520
+
+# ASSUMPTION: lowest acceptable potency (90% of original strength).
+P_min: 0.90
+
+# ASSUMPTION: below this temperature (freezing risk) the potency model does not apply.
+hard_limit_low_c: 0.0
+
+# ASSUMPTION: above this temperature (heat damage) the potency model does not apply.
+hard_limit_high_c: 40.0
+
+# ASSUMPTION: how many readings in a row must be beyond a hard limit before quarantine (amendment A5).
+hard_limit_consecutive_samples: 2
+
+# ASSUMPTION: CVaR level; 0.95 means "average of the worst 5% of outcomes".
+alpha: 0.95
+
+# ASSUMPTION: number of random future scenarios per action in the planner.
+monte_carlo_n: 5000

@@ -1,8 +1,11 @@
-"""Write shared/test-vectors/potency_vectors.json from the Python reference implementation.
+"""Write the shared potency test vectors from the Python reference implementation.
 
 Run from the repo root:  python scripts/make_test_vectors.py
+Two files are written, one per product profile:
+  shared/test-vectors/potency_vectors.json                 the ACTIVE profile (product_default.yaml)
+  shared/test-vectors/potency_vectors_team_document.json   the REFERENCE profile (team document)
 Every expected number is computed by the code in edge/potency.py. Only the "document_checks"
-list holds numbers typed from the team document (rounded, with the precision they were given).
+list (reference file only) holds numbers typed from the team document, rounded as given there.
 """
 
 from __future__ import annotations
@@ -25,8 +28,11 @@ from edge.potency import (  # noqa: E402
 )
 from shared.config import ProductConfig, load_product_config  # noqa: E402
 
-OUTPUT = REPO_ROOT / "shared" / "test-vectors" / "potency_vectors.json"
-SCHEMA_VERSION = "1"
+VECTORS_DIR = REPO_ROOT / "shared" / "test-vectors"
+ACTIVE_FILE = "potency_vectors.json"
+REFERENCE_FILE = "potency_vectors_team_document.json"
+REFERENCE_CONFIG = REPO_ROOT / "config" / "product_team_document.yaml"
+SCHEMA_VERSION = "2"
 AF_TEMPS_C = [-10, 0, 2, 5, 8, 12, 20, 25, 30, 40]
 SAMPLE_S = 600.0
 
@@ -80,8 +86,12 @@ def _state_dict(state) -> dict:
     return state.model_dump()
 
 
-def build_vectors(cfg: ProductConfig | None = None) -> dict:
-    """Return the full vector document as plain data."""
+def build_vectors(
+    cfg: ProductConfig | None = None,
+    profile: str = "active_default",
+    with_document_checks: bool = False,
+) -> dict:
+    """Return one vector document as plain data for one product profile."""
     cfg = cfg or load_product_config()
     af_cases = [
         {"temp_c": t, "expected_af": arrhenius_acceleration_factor(t, cfg)} for t in AF_TEMPS_C
@@ -154,14 +164,27 @@ def build_vectors(cfg: ProductConfig | None = None) -> dict:
             "expected_rounded": 2.66, "rounding_decimals": 2,
         },
     ]  # fmt: skip
-    return {
+    profile_text = {
+        "active_default": (
+            "ACTIVE profile (config/product_default.yaml): illustrative heat-sensitive biologic "
+            "profile; placeholder, not sourced [SOURCE NEEDED]."
+        ),
+        "team_document": (
+            "REFERENCE profile (config/product_team_document.yaml): values taken from the team "
+            "document, not independently verified [SOURCE NEEDED]."
+        ),
+    }[profile]
+    note = (
+        "All expected values are computed by the Python reference implementation "
+        "(edge/potency.py) from synthetic product parameters for an imaginary vaccine."
+    )
+    if with_document_checks:
+        note += " Only document_checks holds rounded numbers taken from the team document."
+    document = {
         "meta": {
             "schema_version": SCHEMA_VERSION,
-            "note": (
-                "All expected values are computed by the Python reference implementation "
-                "(edge/potency.py) from synthetic product parameters for an imaginary vaccine. "
-                "Only document_checks holds rounded numbers taken from the team document."
-            ),
+            "profile": profile_text,
+            "note": note,
             "constants": {
                 "Ea_over_R": cfg.Ea_over_R,
                 "T_ref_c": cfg.T_ref_c,
@@ -176,7 +199,18 @@ def build_vectors(cfg: ProductConfig | None = None) -> dict:
         "af_cases": af_cases,
         "tau_cases": tau_cases,
         "tracker_cases": tracker_cases,
-        "document_checks": document_checks,
+    }
+    if with_document_checks:
+        document["document_checks"] = document_checks
+    return document
+
+
+def build_all() -> dict[str, dict]:
+    """File name -> vector document, for both profiles."""
+    reference = load_product_config(REFERENCE_CONFIG)
+    return {
+        ACTIVE_FILE: build_vectors(profile="active_default"),
+        REFERENCE_FILE: build_vectors(reference, "team_document", with_document_checks=True),
     }
 
 
@@ -185,10 +219,11 @@ def render(vectors: dict) -> str:
 
 
 def main() -> int:
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT, "w", encoding="utf-8", newline="\n") as handle:
-        handle.write(render(build_vectors()))
-    print(f"wrote {OUTPUT}")
+    VECTORS_DIR.mkdir(parents=True, exist_ok=True)
+    for name, vectors in build_all().items():
+        with open(VECTORS_DIR / name, "w", encoding="utf-8", newline="\n") as handle:
+            handle.write(render(vectors))
+        print(f"wrote {VECTORS_DIR / name}")
     return 0
 
 

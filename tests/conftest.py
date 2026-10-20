@@ -1,9 +1,13 @@
 """Shared fixtures for the simulator tests."""
 
+from pathlib import Path
+
 import pytest
 
 from shared.config import BoxConfig, ProductConfig, load_box_config, load_product_config
 from simulator.scenario import Scenario
+
+REFERENCE_CONFIG = Path(__file__).resolve().parent.parent / "config" / "product_team_document.yaml"
 
 
 @pytest.fixture(scope="session")
@@ -13,7 +17,14 @@ def box() -> BoxConfig:
 
 @pytest.fixture(scope="session")
 def product() -> ProductConfig:
+    """The ACTIVE product profile (config/product_default.yaml)."""
     return load_product_config()
+
+
+@pytest.fixture(scope="session")
+def reference_product() -> ProductConfig:
+    """The REFERENCE profile with the team document's values (for the worked examples)."""
+    return load_product_config(REFERENCE_CONFIG)
 
 
 @pytest.fixture

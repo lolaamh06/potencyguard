@@ -36,8 +36,23 @@ def _af(temp, cfg):
 # ----------------------------------------------------------------- shared vectors
 
 
-@pytest.mark.parametrize("case", VECTORS["tracker_cases"], ids=lambda c: c["name"])
-def test_tracker_matches_the_shared_vectors(case, product):
+REFERENCE_VECTORS = json.loads(
+    (ROOT / "shared" / "test-vectors" / "potency_vectors_team_document.json").read_text("utf-8")
+)
+TRACKER_CASES = [
+    (fixture, case)
+    for fixture, doc in (("product", VECTORS), ("reference_product", REFERENCE_VECTORS))
+    for case in doc["tracker_cases"]
+]
+
+
+@pytest.mark.parametrize(
+    ("fixture", "case"),
+    TRACKER_CASES,
+    ids=lambda v: v if isinstance(v, str) else v["name"],
+)
+def test_tracker_matches_the_shared_vectors(fixture, case, request):
+    product = request.getfixturevalue(fixture)
     tracker = PotencyTracker(product)
     for reading, status, per in zip(
         case["readings"], case["expected_statuses"], case["expected_per_sample"], strict=True
@@ -200,8 +215,8 @@ def _final(analyses, scenario_id, which):
     return series[-1]
 
 
-def test_all_eight_recordings_were_analysed(analyses):
-    assert len(analyses) == 8
+def test_all_nine_recordings_were_analysed(analyses):
+    assert len(analyses) == 9
 
 
 def test_baseline_potency_stays_high(analyses, product):
@@ -210,14 +225,15 @@ def test_baseline_potency_stays_high(analyses, product):
     assert state.tau_eq_h < 0.01 * product.tau_max_h
 
 
-def test_reefer_failure_uses_far_more_shelf_life_than_the_baseline(analyses, product):
-    # With these constants potency equals P_min only when 100 percent of the shelf life is used,
-    # so a 36 hour failure cannot push potency below P_min; it spends a lot more of the shelf life.
+def test_reefer_failure_pushes_potency_below_the_minimum(analyses, product):
+    # Potency equals P_min exactly when 100 percent of the shelf life is used. Under the active
+    # profile (decision 0004) the 36 hour failure spends more than that, so it falls below P_min.
+    # (Under the old team-document constants it spent only 8.9 percent; see the Phase 2B report.)
     failure = _final(analyses, "reefer_failure", "true")
     baseline = _final(analyses, "baseline_ok", "true")
     assert failure.shelf_life_used_fraction > 10 * baseline.shelf_life_used_fraction
     assert failure.potency < baseline.potency
-    assert not failure.below_min_potency
+    assert failure.below_min_potency and failure.potency < product.P_min
 
 
 def test_spoof_hides_damage_from_the_reported_series(analyses):
@@ -269,10 +285,33 @@ def test_potency_command_all_prints_a_two_row_summary_per_recording():
     out = io.StringIO()
     assert edge_main(["potency", "--all"], out) == 0
     text = out.getvalue()
-    assert text.count("from reported readings") == 8
-    assert text.count("from true temperature") == 8
+    assert text.count("from reported readings") == 9
+    assert text.count("from true temperature") == 9
     assert "sim hour" not in text
 
 
 def test_potency_command_rejects_a_missing_file(tmp_path):
     assert edge_main(["potency", "--recording", str(tmp_path / "nope.jsonl")], io.StringIO()) == 2
+
+
+def test_potency_command_shows_when_potency_first_fell_below_the_minimum():
+    out = io.StringIO()
+    path = RECORDINGS / "hidden_spoilage.jsonl"
+    assert edge_main(["potency", "--recording", str(path)], out) == 0
+    rows = {
+        line.split("  ")[0]: line
+        for line in out.getvalue().splitlines()
+        if line.startswith("from ")
+    }
+    assert "first < P_min" in out.getvalue()
+    assert rows["from reported readings"].rstrip().endswith("never")
+    assert rows["from true temperature (ground truth)"].rstrip().endswith("61.0 h")
+    assert out.getvalue().rstrip().endswith("Not real-world evidence.")
+
+
+def test_potency_command_all_includes_the_crossing_column():
+    out = io.StringIO()
+    assert edge_main(["potency", "--all"], out) == 0
+    text = out.getvalue()
+    assert text.count("first < P_min") == 9
+    assert "31.7 h" in text and "61.0 h" in text

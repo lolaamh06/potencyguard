@@ -61,25 +61,33 @@ def analyse_recording(recording: Path | str, cfg: ProductConfig) -> RecordingAna
     )
 
 
-def _row(label: str, state: PotencyState) -> str:
+def first_below_p_min_hour(states: Sequence[PotencyState]) -> float | None:
+    """Simulated hour of the first sample at which potency was below P_min, or None."""
+    return next((s.t_s / 3600.0 for s in states if s.below_min_potency), None)
+
+
+def _row(label: str, states: Sequence[PotencyState]) -> str:
+    state = states[-1]
     mkt = "n/a" if state.mkt_c is None else f"{state.mkt_c:.2f}"
+    crossing = first_below_p_min_hour(states)
+    below = "never" if crossing is None else f"{crossing:.1f} h"
     return (
         f"{label:<38}{state.tau_eq_h:>10.2f}{state.potency * 100:>10.3f}"
         f"{state.shelf_life_used_fraction * 100:>10.3f}{mkt:>9}{state.samples_excluded:>9}"
-        f"{'yes' if state.below_min_potency else 'no':>11}"
+        f"{below:>16}"
     )
 
 
 def summary_table(analysis: RecordingAnalysis) -> str:
     head = (
         f"{'':<38}{'tau_eq (h)':>10}{'potency %':>10}{'used %':>10}{'MKT (C)':>9}"
-        f"{'excluded':>9}{'< P_min':>11}"
+        f"{'excluded':>9}{'first < P_min':>16}"
     )
     return "\n".join(
         [
             head,
-            _row("from reported readings", analysis.reported_states[-1]),
-            _row("from true temperature (ground truth)", analysis.true_states[-1]),
+            _row("from reported readings", analysis.reported_states),
+            _row("from true temperature (ground truth)", analysis.true_states),
         ]
     )
 

@@ -2,6 +2,8 @@
 
 Date: 2026-10-20
 
+*Update: the active product constants were changed in decision 0004. The formulas and rules below are unchanged; the numbers quoted in "One consequence worth knowing" describe the original team-document constants, which are now the reference profile.*
+
 This records how the box computes how much of a medicine's strength is left, and why it is built the way it is. The maths follows the master brief (section 3.2) and amendments A5 and A6. Potency is a model output for an imaginary product with assumed constants, not a measurement.
 
 ## The formulas
