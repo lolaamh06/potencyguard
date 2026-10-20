@@ -4,15 +4,20 @@ description: The cooling unit stops working part way through a hot day. The box 
 seed: 103
 duration_h: 36
 sample_interval_s: 600
+# placeholder, not sourced [SOURCE NEEDED]: temperatures, times and shift below.
 ambient:
   - [0, 22]
   - [10, 32]
-  - [20, 44]
-  - [30, 46]
-  - [36, 42]
+  - [20, 46]
+  - [30, 50]
+  - [36, 48]
+ambient_jitter_c: 2
+ambient_shift_h: 2
 rh_base_pct: 45
 events:
   - type: cooling_factor
-    start_h: 10
+    start_h: {min: 8, max: 12}
     end_h: 36
     factor: 0.0
+expect:
+  true_max_c_gt: hard_limit_high_c

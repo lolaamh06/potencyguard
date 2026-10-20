@@ -1,17 +1,23 @@
 id: heatwave_transit
 title: Long hot leg on the road
-description: A long road leg in very hot weather. The cooling runs at reduced capacity for most of the leg, so the box runs warm for a long time without a sudden failure.
+description: A long road leg in very hot weather. The cooling unit runs at reduced capacity for most of the leg, so the box runs warm for a long time without a sudden failure.
 seed: 105
 duration_h: 72
 sample_interval_s: 600
+# placeholder, not sourced [SOURCE NEEDED]: temperatures, times, factors and thresholds below.
 ambient:
   - [0, 28]
   - [24, 38]
   - [48, 44]
   - [72, 36]
+ambient_jitter_c: 2
+ambient_shift_h: 3
 rh_base_pct: 40
 events:
   - type: cooling_factor
-    start_h: 24
-    end_h: 60
-    factor: 0.4
+    start_h: {min: 20, max: 28}
+    end_h: {min: 56, max: 64}
+    factor: {min: 0.25, max: 0.45}
+expect:
+  true_max_c_gt: 25
+  true_max_c_lt: hard_limit_high_c

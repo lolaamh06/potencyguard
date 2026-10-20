@@ -1,14 +1,19 @@
 id: baseline_ok
 title: Baseline, cold chain holds
-description: A stable journey. Outside temperatures change with the time of day, the cooling keeps up, and the box stays near its setpoint the whole way.
+description: A stable journey. Outside temperatures change with the time of day, the cooling unit cycles on and off, and the box stays close to its setpoint the whole way.
 seed: 101
 duration_h: 48
 sample_interval_s: 600
+# placeholder, not sourced [SOURCE NEEDED]: all temperatures, jitter and shift below.
 ambient:
   - [0, 20]
   - [12, 25]
   - [24, 19]
   - [36, 26]
   - [48, 21]
+ambient_jitter_c: 3
+ambient_shift_h: 3
 rh_base_pct: 45
 events: []
+expect:
+  true_within_setpoint_c: 2

@@ -9,7 +9,7 @@ from typing import IO
 from edge.sensor_reading import SensorReading
 from edge.sensor_source import SensorSource
 
-SUPPORTED_SCHEMA_VERSION = "0.1"
+SUPPORTED_SCHEMA_VERSION = "0.2"
 
 
 class RecordedSource(SensorSource):
@@ -30,7 +30,8 @@ class RecordedSource(SensorSource):
             raise ValueError(f"recording {self._path} must start with a header line")
         if header.get("schema_version") != SUPPORTED_SCHEMA_VERSION:
             raise ValueError(
-                f"unsupported schema_version {header.get('schema_version')!r} in {self._path}"
+                f"unsupported schema_version {header.get('schema_version')!r} in {self._path}; "
+                f"this reader needs {SUPPORTED_SCHEMA_VERSION}. Regenerate the recording."
             )
         self.header = header
 

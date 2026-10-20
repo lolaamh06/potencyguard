@@ -4,12 +4,18 @@ description: A normal journey in which the box takes one large knock. Temperatur
 seed: 108
 duration_h: 24
 sample_interval_s: 600
+# placeholder, not sourced [SOURCE NEEDED]: temperatures, time and shock size below.
 ambient:
   - [0, 20]
   - [12, 24]
   - [24, 20]
+ambient_jitter_c: 2
+ambient_shift_h: 2
 rh_base_pct: 45
 events:
   - type: shock
-    at_h: 8
-    peak_g: 15.0
+    at_h: {min: 4, max: 20}
+    peak_g: {min: 8, max: 20}
+expect:
+  exactly_one_shock_above_g: 5
+  true_within_setpoint_c: 2

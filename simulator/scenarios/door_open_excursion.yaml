@@ -4,13 +4,20 @@ description: The box door is held open for a while at a warm loading area. The i
 seed: 102
 duration_h: 24
 sample_interval_s: 600
+# placeholder, not sourced [SOURCE NEEDED]: temperatures, times and heat sizes below.
 ambient:
   - [0, 22]
   - [24, 22]
+ambient_jitter_c: 2
+ambient_shift_h: 0
 rh_base_pct: 45
 events:
   - type: heat_load
-    start_h: 6
-    end_h: 7
-    power_w: 100
+    start_h: {min: 4, max: 5.5}
+    end_h: {min: 7, max: 8}
+    power_w: {min: 90, max: 120}
     rh_delta_pct: 15
+expect:
+  true_max_c_gt: 9
+  true_max_c_lt: hard_limit_high_c
+  final_true_within_setpoint_c: 1

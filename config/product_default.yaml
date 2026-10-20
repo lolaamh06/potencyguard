@@ -56,3 +56,83 @@ sensor_sigma_rh_pct: 0.5
 
 # placeholder, not sourced [SOURCE NEEDED]: standard deviation of the baseline shock noise, in g.
 sensor_sigma_shock_g: 0.01
+
+# ---------------------------------------------------------------------------
+# Live simulator (Phase 2A). Every value below is
+# placeholder, not sourced [SOURCE NEEDED].
+# ---------------------------------------------------------------------------
+
+# placeholder, not sourced [SOURCE NEEDED]: total width of the cooling unit's on/off band in C.
+# The unit switches ON above setpoint + deadband/2 and OFF below setpoint - deadband/2.
+box_deadband_c: 0.8
+
+# placeholder, not sourced [SOURCE NEEDED]: largest internal integration step in seconds.
+# A sample interval is split into the fewest equal steps that are each at most this long.
+sim_substep_s: 60
+
+# placeholder, not sourced [SOURCE NEEDED]: heat entering the box while a door is open, in watts.
+door_default_power_w: 100
+
+# ---------------------------------------------------------------------------
+# Free-run trips (Phase 2A). Every value below is
+# placeholder, not sourced [SOURCE NEEDED].
+# Probabilities are per simulated hour. Durations are in hours unless the name says minutes.
+# ---------------------------------------------------------------------------
+freerun_sample_interval_s: 600
+freerun_default_hours: 48
+freerun_rh_base_pct: 45
+# chance that a trip has no faults at all
+freerun_clean_trip_prob: 0.25
+# climate: base temperature and daily swing (amplitude), in C
+freerun_base_temp_min_c: 14
+freerun_base_temp_max_c: 30
+freerun_swing_min_c: 2
+freerun_swing_max_c: 8
+# cooling unit stops completely, then comes back
+freerun_kill_cooling_prob: 0.010
+freerun_kill_cooling_hours_min: 2
+freerun_kill_cooling_hours_max: 10
+# cooling unit runs at reduced capacity, then comes back
+freerun_derate_cooling_prob: 0.012
+freerun_derate_factor_min: 0.2
+freerun_derate_factor_max: 0.6
+freerun_derate_hours_min: 3
+freerun_derate_hours_max: 12
+# door held open
+freerun_open_door_prob: 0.025
+freerun_open_door_minutes_min: 5
+freerun_open_door_minutes_max: 60
+# warm spell around the box
+freerun_heat_soak_prob: 0.008
+freerun_heat_soak_delta_min_c: 5
+freerun_heat_soak_delta_max_c: 12
+freerun_heat_soak_hours_min: 4
+freerun_heat_soak_hours_max: 12
+freerun_heat_soak_ramp_hours_min: 0.5
+freerun_heat_soak_ramp_hours_max: 2
+# cold spell around the box (delta values are negative)
+freerun_cold_snap_prob: 0.005
+freerun_cold_snap_delta_min_c: -20
+freerun_cold_snap_delta_max_c: -10
+freerun_cold_snap_hours_min: 4
+freerun_cold_snap_hours_max: 10
+freerun_cold_snap_ramp_hours_min: 0.5
+freerun_cold_snap_ramp_hours_max: 2
+# reported temperature falsified; only starts after a cooling or heat fault has begun
+freerun_spoof_prob: 0.04
+freerun_spoof_hours_min: 2
+freerun_spoof_hours_max: 8
+freerun_spoof_hold_c_min: 3
+freerun_spoof_hold_c_max: 7
+freerun_spoof_offset_c_min: 5
+freerun_spoof_offset_c_max: 12
+freerun_spoof_replay_len_hours_min: 1
+freerun_spoof_replay_len_hours_max: 3
+# one isolated extreme reading
+freerun_glitch_prob: 0.02
+freerun_glitch_value_min_c: 35
+freerun_glitch_value_max_c: 70
+# one large shock
+freerun_shock_prob: 0.01
+freerun_shock_peak_min_g: 6
+freerun_shock_peak_max_g: 20

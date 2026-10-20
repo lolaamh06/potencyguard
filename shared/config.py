@@ -50,7 +50,7 @@ def _is_integer(value: object) -> bool:
     return isinstance(value, int) and not isinstance(value, bool)
 
 
-def _read_yaml_mapping(path: Path | str | None) -> dict:
+def read_yaml_mapping(path: Path | str | None) -> dict:
     config_path = Path(path) if path is not None else DEFAULT_CONFIG_PATH
     try:
         raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
@@ -77,6 +77,9 @@ class BoxConfig:
     sensor_sigma_c: float
     sensor_sigma_rh_pct: float
     sensor_sigma_shock_g: float
+    box_deadband_c: float
+    sim_substep_s: float
+    door_default_power_w: float
 
     @property
     def heat_capacity_j_per_k(self) -> float:
@@ -86,7 +89,7 @@ class BoxConfig:
 
 def load_box_config(path: Path | str | None = None) -> BoxConfig:
     """Load and validate the box simulator parameters from the same YAML file."""
-    raw = _read_yaml_mapping(path)
+    raw = read_yaml_mapping(path)
     names = [f.name for f in fields(BoxConfig)]
     missing = [name for name in names if name not in raw]
     if missing:
@@ -94,7 +97,14 @@ def load_box_config(path: Path | str | None = None) -> BoxConfig:
     for name in names:
         if not _is_number(raw[name]):
             raise ConfigError(f"{name} must be a number (got {raw[name]!r})")
-    for name in ("box_R_th_k_per_w", "box_tau_h", "box_cooling_capacity_w"):
+    for name in (
+        "box_R_th_k_per_w",
+        "box_tau_h",
+        "box_cooling_capacity_w",
+        "box_deadband_c",
+        "sim_substep_s",
+        "door_default_power_w",
+    ):
         if raw[name] <= 0:
             raise ConfigError(f"{name} must be greater than 0 (got {raw[name]})")
     for name in ("sensor_sigma_c", "sensor_sigma_rh_pct", "sensor_sigma_shock_g"):
@@ -105,7 +115,7 @@ def load_box_config(path: Path | str | None = None) -> BoxConfig:
 
 def load_product_config(path: Path | str | None = None) -> ProductConfig:
     """Load and validate a product config; default is config/product_default.yaml."""
-    raw = _read_yaml_mapping(path)
+    raw = read_yaml_mapping(path)
 
     names = [f.name for f in fields(ProductConfig)]
     missing = [name for name in names if name not in raw]

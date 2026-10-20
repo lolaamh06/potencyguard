@@ -5,46 +5,58 @@ from __future__ import annotations
 from edge.sensor_reading import SensorReading
 from edge.sensor_source import SensorSource
 from shared.config import BoxConfig
+from simulator.engine import SOURCE_NAME
+from simulator.events import InjectionResult
+from simulator.freerun import FreeRun
+from simulator.live import LiveSimulator
 from simulator.scenario import Scenario
-from simulator.simulate import SimulationTrace, simulate
+from simulator.truth import TruthSample
 
-SOURCE_NAME = "sim"
+__all__ = ["SOURCE_NAME", "SimSource"]
 
 
 class SimSource(SensorSource):
-    """Replays a freshly simulated scenario one reading at a time."""
+    """Streams a LiveSimulator one reading at a time, and passes injections through.
 
-    def __init__(self, scenario: Scenario, box: BoxConfig) -> None:
-        self.scenario = scenario
+    For a scenario the default seed is the scenario's own (a fixed, reproducible run).
+    Pass random_seed=True for a fresh random seed; the seed used is always in .seed.
+    """
+
+    def __init__(
+        self,
+        source: Scenario | FreeRun,
+        box: BoxConfig,
+        seed: int | None = None,
+        random_seed: bool = False,
+    ) -> None:
+        self._source = source
         self._box = box
-        self._trace: SimulationTrace | None = None
-        self._next = 0
+        if seed is None and not random_seed and isinstance(source, Scenario):
+            seed = source.seed
+        self._seed_arg = seed
+        self._sim: LiveSimulator | None = None
 
     @property
-    def trace(self) -> SimulationTrace:
-        """The full simulation, including ground truth. Available after start()."""
-        if self._trace is None:
+    def simulator(self) -> LiveSimulator:
+        if self._sim is None:
             raise RuntimeError("SimSource.start() has not been called")
-        return self._trace
+        return self._sim
+
+    @property
+    def seed(self) -> int:
+        return self.simulator.seed
 
     def start(self) -> None:
-        self._trace = simulate(self.scenario, self._box)
-        self._next = 0
+        self._sim = LiveSimulator(self._source, self._box, self._seed_arg)
 
     def read(self) -> SensorReading | None:
-        trace = self.trace
-        i = self._next
-        if i >= len(trace.t_s):
-            return None
-        self._next += 1
-        return SensorReading(
-            t_s=float(trace.t_s[i]),
-            temp_c=float(trace.reported_temp_c[i]),
-            rh_pct=float(trace.rh_pct[i]),
-            shock_g=float(trace.shock_g[i]),
-            source=SOURCE_NAME,
-        )
+        return self.simulator.step()[0]
+
+    def read_with_truth(self) -> tuple[SensorReading | None, TruthSample | None]:
+        return self.simulator.step()
+
+    def inject(self, event) -> InjectionResult:
+        return self.simulator.inject(event)
 
     def close(self) -> None:
-        self._trace = None
-        self._next = 0
+        self._sim = None

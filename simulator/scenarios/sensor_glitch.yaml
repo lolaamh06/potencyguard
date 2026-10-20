@@ -4,12 +4,19 @@ description: A normal journey with a single extreme reading in the data. The box
 seed: 107
 duration_h: 24
 sample_interval_s: 600
+# placeholder, not sourced [SOURCE NEEDED]: temperatures, time and glitch value below.
 ambient:
   - [0, 20]
   - [12, 24]
   - [24, 20]
+ambient_jitter_c: 2
+ambient_shift_h: 2
 rh_base_pct: 45
 events:
   - type: glitch
-    at_h: 10
-    value_c: 60.0
+    at_h: {min: 6, max: 18}
+    value_c: {min: 35, max: 70}
+expect:
+  exactly_one_reported_outlier: true
+  outlier_jump_c: 20
+  true_max_above_setpoint_c_lt: 2

@@ -4,17 +4,24 @@ description: The cooling stops and the box really warms, but from some point on 
 seed: 106
 duration_h: 36
 sample_interval_s: 600
+# placeholder, not sourced [SOURCE NEEDED]: temperatures, times and the false value below.
 ambient:
   - [0, 22]
   - [10, 30]
   - [36, 30]
+ambient_jitter_c: 2
+ambient_shift_h: 2
 rh_base_pct: 45
 events:
   - type: cooling_factor
-    start_h: 10
+    start_h: {min: 8, max: 10}
     end_h: 36
     factor: 0.0
   - type: spoof
-    start_h: 12
+    start_h: {min: 12, max: 14}
     end_h: 36
-    reported_c: 5.0
+    mode: hold
+    reported_c: {min: 4, max: 6}
+expect:
+  reported_true_gap_c_gt: 10
+  spoof_begins_after_failure: true
