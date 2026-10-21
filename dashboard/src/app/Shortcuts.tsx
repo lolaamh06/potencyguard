@@ -7,6 +7,7 @@ const KEYS: [string, string][] = [
   ["Space, PageDown, Right", "next chapter (Shift+Space, PageUp, Left: previous)"],
   ["Down, Up", "scroll a little"],
   ["Home, End", "start, end of the story"],
+  ["Enter", "enter the Control Room (at the last chapter)"],
   ["G", "go to the Story"],
   ["C", "go to the Control Room"],
   ["Q", "change the picture quality (high, medium, low, 2D)"],

@@ -9,6 +9,7 @@
    "temp_c": 30.0
   }
  },
+ "label": "Illustrative product, model output",
  "note": "Synthetic product, model output.",
  "profiles": {
   "active": {
@@ -344,5 +345,6 @@
    "tau_max_h": 17520
   }
  },
+ "provenance_note": "Figures for the active profile are shown on the page; the reference-profile figures are kept for the Provenance drawer.",
  "threshold_c": 8.0
 }

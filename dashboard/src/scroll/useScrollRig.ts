@@ -6,7 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { useEffect, type RefObject } from "react";
 import { useAppStore } from "../app/appStore";
-import { CHAPTERS, chapterAtScroll, chapterScrollY, progressFromScroll } from "./chapters";
+import { CHAPTERS, chapterLocal, chapterScrollY, progressFromScroll } from "./chapters";
 import { scrollApi, scrollState } from "./scrollState";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -26,7 +26,10 @@ export function useScrollRig(root: RefObject<HTMLElement | null>, reducedMotion:
     const update = () => {
       const y = window.scrollY;
       scrollState.progress = progressFromScroll(y, maxScroll());
-      useAppStore.getState().setChapter(chapterAtScroll(RENDERED, y, window.innerHeight));
+      const at = chapterLocal(RENDERED, y, window.innerHeight, maxScroll());
+      scrollState.chapter = at.index;
+      scrollState.local = at.t;
+      useAppStore.getState().setChapter(at.index);
     };
     const trigger = ScrollTrigger.create({
       trigger: root.current,

@@ -36,3 +36,8 @@
 
 - `python scripts/export_replay.py [--out DIR]` writes replay files for the five featured scenarios (baseline_ok, door_open_excursion, reefer_failure, spoof_attempt, hidden_spoilage) and an index to `dashboard/public/replay/`. Read-only use of the existing pipeline; deterministic; TEST-ONLY signing key derived inside the script. Tested by `tests/test_export_replay.py`.
 - `python scripts/make_land_mask.py [--width N]` downloads Natural Earth 110m land once (public domain), makes the globe's land mask PNG and its README in `dashboard/public/globe/`. Needs network; the source download is not kept. Standard library only.
+
+## Phase F3 scripts
+
+- `scripts/export_replay.py` now takes each scenario's decision from the Phase 6 backend itself (in process), so the exported route equals `python -m backend replay --all`.
+- `python scripts/export_story.py [--out DIR]` writes the Story data: `dashboard/src/data/bundled/chapter1.json` (reuses the F1 generator), `dashboard/public/story/chapter5.json` (5,000 seeded outcomes per action and the precomputed alpha table) and `chapter6.json` (approval card content and the real edit-and-verify). Tested by `tests/test_export_story.py`.

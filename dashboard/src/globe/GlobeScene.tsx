@@ -19,6 +19,9 @@ import { useQualityStore } from "../quality/qualityStore";
 import { scrollState } from "../scroll/scrollState";
 import { colors } from "../theme/tokens";
 import { cameraPose } from "./cameraPath";
+import { stageCamera } from "./stageCamera";
+import { Stage } from "./Stage";
+import { useStoryBundle } from "../data/useStoryData";
 import { Fallback2D } from "./Fallback2D";
 import { Globe } from "./Globe";
 import { DEFAULT_GLOBE_PROPS, type GlobeProps } from "./types";
@@ -50,10 +53,16 @@ function CameraRig() {
   useFrame((_, delta) => {
     const reduced = useAppStore.getState().reducedMotion;
     const portrait = size.width / size.height < 1;
-    const pose = cameraPose(scrollState.progress, undefined, reduced);
+    const globePose = cameraPose(scrollState.progress, undefined, reduced);
+    const pose = stageCamera(scrollState.chapter, scrollState.local, globePose, reduced);
     const k = portrait ? 1.45 : 1;
-    _goal.set(pose.position[0] * k, pose.position[1] * k, pose.position[2] * k);
+    const dive = 1 - 0.5 * scrollState.dive;
     _target.set(...pose.target);
+    _goal.set(
+      _target.x + (pose.position[0] * k - _target.x) * dive,
+      _target.y + (pose.position[1] * k - _target.y) * dive,
+      _target.z + (pose.position[2] * k - _target.z) * dive,
+    );
     if (first.current || reduced) {
       camera.position.copy(_goal);
       first.current = false;
@@ -161,6 +170,12 @@ export function GlobeScene(props: Partial<GlobeProps>) {
   const chapter = useAppStore((s) => s.chapter);
   const reduced = useAppStore((s) => s.reducedMotion);
   const layer = useRef<HTMLDivElement>(null);
+  const story = useStoryBundle();
+
+  // Behind the chart chapters the globe is dimmed so the figures read clearly.
+  useEffect(() => {
+    layer.current?.classList.toggle("dim", [1, 2, 3, 4, 6].includes(chapter));
+  }, [chapter]);
 
   // Reduced motion: the camera stays still, so each chapter change crossfades the picture instead.
   useEffect(() => {
@@ -178,7 +193,7 @@ export function GlobeScene(props: Partial<GlobeProps>) {
       <SceneBoundary props={globeProps}>
         <Canvas
           dpr={dpr}
-          camera={{ position: [0, 0, 4], fov: 40, near: 0.1, far: 80 }}
+          camera={{ position: [0, -39.5, 1.6], fov: 40, near: 0.05, far: 250 }}
           gl={{ antialias: false, powerPreference: "high-performance", alpha: false }}
           aria-label="A night globe with an illustrative shipping route"
         >
@@ -187,6 +202,7 @@ export function GlobeScene(props: Partial<GlobeProps>) {
           <GovernorProbe />
           <ContextGuard />
           <Globe {...globeProps} mask={mask} tier={tier} pixelRatio={dpr} />
+          <Stage cloud={story?.ch5 ?? null} glow={story?.hidden?.frames[0]?.potency ?? 1} />
           {settings.bloom && (
             <EffectComposer multisampling={0}>
               <Bloom luminanceThreshold={0.35} intensity={0.55} mipmapBlur />

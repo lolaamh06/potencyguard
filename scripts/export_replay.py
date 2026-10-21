@@ -24,22 +24,19 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 
-from backend.service import SOFTWARE_VERSION, apply_backend_rules, close_call  # noqa: E402
+from backend.replay import ReplaySummary, make_replay_app, replay_recording  # noqa: E402
+from backend.service import SOFTWARE_VERSION  # noqa: E402
 from edge.assessment import TrustAssessor  # noqa: E402
 from edge.chain import Ledger, Signer, verify_chain  # noqa: E402
 from edge.recorded_source import RecordedSource  # noqa: E402
 from edge.runner import run_recording  # noqa: E402
 from edge.tamper_monitor import TamperMonitor  # noqa: E402
-from planner.config import ACTIONS, load_planner_config  # noqa: E402
-from planner.core import plan  # noqa: E402
-from planner.governance import build_decision  # noqa: E402
-from planner.pipeline import build_inputs  # noqa: E402
+from planner.config import load_planner_config  # noqa: E402
 from shared.config import load_box_config, load_product_config  # noqa: E402
 
 SCHEMA_VERSION = "1"
 FRAME_STEP = 3  # keep every third sample (30 minutes) so the files stay small
 DEVICE_ID = "pg-replay-demo"
-CLOSE_CALL_PERCENT = 5.0  # same placeholder as config/backend.yaml
 DEFAULT_OUT = REPO / "dashboard" / "public" / "replay"
 
 PRODUCT_LABEL = "Illustrative product, model output"
@@ -135,56 +132,66 @@ def _header(path: Path) -> dict:
         return json.loads(handle.readline())
 
 
-def _decision(path: Path, checkpoint_h: float, product, box):  # noqa: ANN001
-    cfg = load_planner_config()
-    built = build_inputs(path, checkpoint_h, product, box)
-    table = plan(built.inputs, cfg, product, built.twin, built.setpoint_c)
-    decision = build_decision(table, built.inputs, cfg)
-    decision, _flags = apply_backend_rules(decision, table, CLOSE_CALL_PERCENT, False, False)
-    is_close, close_text = close_call(table, CLOSE_CALL_PERCENT)
+def _signer() -> Signer:
+    return Signer.from_seed(hashlib.sha256(b"F2 replay demo key (TEST ONLY)").digest())
+
+
+def backend_decision(name: str, checkpoint_h: float, tamper: str | None = None) -> ReplaySummary:
+    """Drive the Phase 6 backend itself (in process, new database) for one recording.
+
+    The decision is whatever `POST /shipments/{id}/decide` returns, so the exported route,
+    table and reasons are the backend's own: nothing is recomputed or copied here.
+    """
+    from fastapi.testclient import TestClient  # noqa: PLC0415
+
+    path = REPO / "data" / "recordings" / f"{name}.jsonl"
+    with tempfile.TemporaryDirectory(prefix="pg_f3_") as tmp:
+        app, store, _ = make_replay_app(db=Path(tmp) / "replay.sqlite")
+        try:
+            with TestClient(app) as client:
+                return replay_recording(client, path, _signer(), Path(tmp), checkpoint_h, tamper)
+        finally:
+            store.close()
+
+
+def _decision(name: str, checkpoint_h: float) -> dict:
+    summary = backend_decision(name, checkpoint_h)
+    d = summary.decision
+    if d is None:
+        raise RuntimeError(f"the backend refused a decision for {name}: {summary.decision_refused}")
     actions = [
         {
-            "name": a,
-            "cost": table.results[a].cost,
-            "failure_probability": table.results[a].failure_probability,
-            "expected_loss": table.results[a].expected_loss,
-            "cvar": table.results[a].cvar,
+            "name": row["action"],
+            "cost": row["cost"],
+            "failure_probability": row["failure_probability"],
+            "expected_loss": row["expected_loss"],
+            "cvar": row["cvar"],
         }
-        for a in ACTIONS
+        for row in d["table"]
     ]
+    cfg = load_planner_config()
     return {
         "checkpoint_h": checkpoint_h,
         "alpha": cfg.alpha,
         "n_scenarios": cfg.n_scenarios,
         "planner_seed": cfg.seed,
         "actions": actions,
-        "chosen_action": decision.chosen_action,
-        "route": decision.route,
-        "shipment_status": decision.shipment_status,
-        "reasons": list(decision.reasons),
-        "close_call": is_close,
-        "close_call_text": close_text,
-        "needs_human": decision.route != "auto_approved",
-        "trust_level": built.inputs.trust_level,
-        "verdict": built.inputs.verdict,
-        "worst_case_potency": _round(_worst_case(built.inputs.start_tau_eq_h, product)[0], 9),
-        "worst_case_shelf_life_used_fraction": _round(
-            _worst_case(built.inputs.start_tau_eq_h, product)[1], 9
-        ),
+        "chosen_action": d["chosen_action"],
+        "route": d["route"],
+        "shipment_status": d["shipment_status"],
+        "reasons": list(d["reasons"]),
+        "explanation": d["explanation"],
+        "close_call": d["close_call"],
+        "needs_human": d["route"] != "auto_approved",
+        "trust_level": d["trust_level"],
+        "verdict": d["verdict"],
+        "approval_task": d["approval_task"],
+        "source": "POST /shipments/{id}/decide of the Phase 6 backend (in process)",
     }
 
 
-def _worst_case(start_tau_eq_h: float, product) -> tuple[float, float]:  # noqa: ANN001
-    from edge.potency import potency_from_tau_eq, shelf_life_used_fraction  # noqa: PLC0415
-
-    return (
-        potency_from_tau_eq(start_tau_eq_h, product),
-        shelf_life_used_fraction(start_tau_eq_h, product),
-    )
-
-
 def _chain(path: Path, product, box):  # noqa: ANN001
-    signer = Signer.from_seed(hashlib.sha256(b"F2 replay demo key (TEST ONLY)").digest())
+    signer = _signer()
     with tempfile.TemporaryDirectory(prefix="pg_f2_") as tmp:
         run = run_recording(path, product, box, signer, DEVICE_ID, Path(tmp), "f2")
         with Ledger.open(run.ledger_path) as ledger:
@@ -209,7 +216,7 @@ def export_one(name: str, out_dir: Path) -> Path:
     path = REPO / "data" / "recordings" / f"{name}.jsonl"
     header = _header(path)
     frames, events, n_samples = _series(path, product, box)
-    decision = _decision(path, checkpoint_h, product, box)
+    decision = _decision(name, checkpoint_h)
     events.append(
         {
             "t_s": checkpoint_h * 3600.0,
