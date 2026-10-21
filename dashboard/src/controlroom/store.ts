@@ -33,6 +33,8 @@ interface CrState {
   speed: Speed;
   paused: boolean;
   human: HumanOutcome | null;
+  /** What a person did for each shipment (demo only; kept when the scenario changes). */
+  outcomes: Partial<Record<ScenarioId, HumanOutcome>>;
   tamper: TamperChoice | null;
   tamperPick: string;
   userLog: LogLine[];
@@ -45,7 +47,8 @@ interface CrState {
   togglePause: () => void;
   reset: () => void;
   tick: (wallDtS: number, replay: ReplayFile, nowMs: number) => void;
-  decide: (replay: ReplayFile, outcome: HumanOutcome) => string | null;
+  decide: (replay: ReplayFile, outcome: HumanOutcome, opts?: { ignoreClock?: boolean }) => string | null;
+  clearDecisions: () => void;
   pickTamper: (key: string) => void;
   applyTamper: (replay: ReplayFile) => void;
   clearTamper: () => void;
@@ -70,6 +73,7 @@ export const useCr = create<CrState>((set, get) => ({
   speed: crClock.speed,
   paused: false,
   human: null,
+  outcomes: {},
   tamper: null,
   tamperPick: "",
   userLog: [],
@@ -84,7 +88,7 @@ export const useCr = create<CrState>((set, get) => ({
       scenarioId: id,
       tS: 0,
       paused: false,
-      human: null,
+      human: get().outcomes[id] ?? null,
       tamper: null,
       tamperPick: "",
       lastUseMs: nowMs,
@@ -105,7 +109,7 @@ export const useCr = create<CrState>((set, get) => ({
 
   reset: () => {
     syncClock(resetClock(crClock));
-    set((s) => ({ tS: 0, paused: false, human: null, tamper: null, userLog: [line(`Scenario reset: ${s.scenarioId}.`, 0)] }));
+    set((s) => ({ tS: 0, paused: false, tamper: null, userLog: [line(`Scenario reset: ${s.scenarioId}.`, 0)] }));
   },
 
   tick: (wallDtS, replay, nowMs) => {
@@ -119,15 +123,24 @@ export const useCr = create<CrState>((set, get) => ({
     }
   },
 
-  decide: (replay, outcome) => {
+  decide: (replay, outcome, opts) => {
     const s = get();
-    if (!canDecide(replay, crClock.tS, s.human)) return "A decision is not open right now.";
+    const id = replay.meta.scenario_id as ScenarioId;
+    const when = opts?.ignoreClock ? replay.meta.checkpoint_h * 3600 : crClock.tS;
+    if (!canDecide(replay, when, s.outcomes[id] ?? null)) return "A decision is not open right now.";
     const error =
       outcome.kind === "override" ? validateOverride(replay, outcome.action, outcome.reason) : outcome.kind === "reject" ? validateReason(outcome.reason) : null;
     if (error) return error;
-    set({ human: outcome, tS: crClock.tS, userLog: [...s.userLog, line(humanLogText(outcome), crClock.tS)] });
+    set({
+      outcomes: { ...s.outcomes, [id]: outcome },
+      human: id === s.scenarioId ? outcome : s.human,
+      tS: crClock.tS,
+      userLog: [...s.userLog, line(humanLogText(outcome), crClock.tS)],
+    });
     return null;
   },
+
+  clearDecisions: () => set({ outcomes: {}, human: null }),
 
   pickTamper: (key) => set({ tamperPick: key }),
 

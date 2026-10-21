@@ -288,9 +288,9 @@ describe("recording sequence", () => {
     expect(dueSteps(REC_SEQUENCE, 100, 100)).toEqual([]);
   });
 
-  it("picks the demo scenarios in order, tampers, then approves", () => {
+  it("opens the two shipments, approves, then shows the Proof and About pages", () => {
     const kinds = REC_SEQUENCE.map((s) => s.action.type);
-    expect(kinds).toEqual(["scenario", "scenario", "tamper", "approve", "provenance", "provenance"]);
+    expect(kinds).toEqual(["go", "go", "approve", "go", "tamper", "go"]);
   });
 
   it("is requested by ?rec=1 only", () => {

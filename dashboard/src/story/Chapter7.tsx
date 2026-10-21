@@ -9,10 +9,10 @@ import { Scene, span, useChapterTick } from "./common";
 
 export function enterControlRoom(reduced: boolean): void {
   if (reduced) {
-    goTo("control-room");
+    goTo({ page: "shipments" });
     return;
   }
-  gsap.to(scrollState, { dive: 1, duration: 0.9, ease: "power2.inOut", onComplete: () => goTo("control-room") });
+  gsap.to(scrollState, { dive: 1, duration: 0.9, ease: "power2.inOut", onComplete: () => goTo({ page: "shipments" }) });
 }
 
 export function Chapter7() {
@@ -38,12 +38,12 @@ export function Chapter7() {
   return (
     <Scene index={7}>
       <div className="copy">
-        <h2>Enter the control room</h2>
+        <h2>Try the demo</h2>
         <p>The story ends here and the product begins.</p>
         <button ref={button} type="button" className="btn enter" onClick={go}>
-          Enter the Control Room
+          Try the demo
         </button>
-        <p className="caption">Press <kbd>Enter</kbd> here, or <kbd>C</kbd> at any time.</p>
+        <p className="caption">Press <kbd>Enter</kbd> here. You can come back to the story from the menu at any time.</p>
       </div>
       <div className="figure" />
     </Scene>

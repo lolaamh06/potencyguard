@@ -12,3 +12,4 @@
 - Phase F2 (frontend foundation) is documented in `docs/02-phase-reports/phase-f2-report.md` and `docs/03-decisions/decision-0011-frontend-foundation.md`. The code is in `dashboard/src/`.
 - Phase F3 (the Story) is documented in `docs/02-phase-reports/phase-f3-report.md`; the chapter components are in `dashboard/src/story/`, the 3D stage in `dashboard/src/globe/Stage.tsx`.
 - Phase F4 (the Control Room) is documented in `docs/02-phase-reports/phase-f4-report.md`; the screen is in `dashboard/src/controlroom/`.
+- Phase F5 (product UX overhaul) is documented in `docs/02-phase-reports/phase-f5-report.md`; pages are in `dashboard/src/pages/`, words in `dashboard/src/copy/`.

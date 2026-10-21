@@ -3,10 +3,11 @@
 // Nothing here uses React state per frame; the pulse time is a uniform updated in useFrame.
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
-import { AdditiveBlending, BackSide, CatmullRomCurve3, Color, Vector3, type ShaderMaterial } from "three";
+import { AdditiveBlending, BackSide, CatmullRomCurve3, Color, NormalBlending, Vector3, type ShaderMaterial } from "three";
 import { useAppStore } from "../app/appStore";
 import { tierSettings, type Tier } from "../quality/governor";
-import { colors } from "../theme/tokens";
+import { useGlobeTheme } from "./useGlobeTheme";
+import type { Palette } from "../theme/palette";
 import { routePoints } from "./geo";
 import { sampleLandPoints, starPositions } from "./landPoints";
 import {
@@ -21,15 +22,12 @@ import {
 import type { GlobeProps, RouteState } from "./types";
 import type { LandMask } from "./useLandMask";
 
-const ROUTE_COLOR: Record<RouteState, string> = {
-  safe: colors.ice400,
-  warning: colors.ember400,
-  danger: colors.ember600,
-};
+const routeColor = (state: RouteState, c: Palette): string => ({ safe: c.ice400, warning: c.ember400, danger: c.ember600 })[state];
 const ARC_LIFT = 0.16;
 const SEGMENTS = 160;
 
 function Stars({ count }: { count: number }) {
+  const { colors } = useGlobeTheme();
   const positions = useMemo(() => starPositions(count, 30), [count]);
   if (count === 0) return null;
   return (
@@ -43,6 +41,7 @@ function Stars({ count }: { count: number }) {
 }
 
 function LandDots({ mask, samples, pixelRatio }: { mask: LandMask; samples: number; pixelRatio: number }) {
+  const { theme, colors } = useGlobeTheme();
   const positions = useMemo(() => sampleLandPoints(mask.data, mask.width, mask.height, samples), [mask, samples]);
   const uniforms = useMemo(
     () => ({
@@ -51,7 +50,7 @@ function LandDots({ mask, samples, pixelRatio }: { mask: LandMask; samples: numb
       uSize: { value: 7.5 },
       uPixelRatio: { value: pixelRatio },
     }),
-    [pixelRatio],
+    [pixelRatio, colors],
   );
   return (
     <points key={positions.length}>
@@ -64,16 +63,17 @@ function LandDots({ mask, samples, pixelRatio }: { mask: LandMask; samples: numb
         uniforms={uniforms}
         transparent
         depthWrite={false}
-        blending={AdditiveBlending}
+        blending={theme === "dark" ? AdditiveBlending : NormalBlending}
       />
     </points>
   );
 }
 
 function Body() {
+  const { colors } = useGlobeTheme();
   const uniforms = useMemo(
     () => ({ uBase: { value: new Color(colors.ink900) }, uRim: { value: new Color(colors.ice700) } }),
-    [],
+    [colors],
   );
   return (
     <mesh>
@@ -84,9 +84,10 @@ function Body() {
 }
 
 function Atmosphere() {
+  const { theme, colors } = useGlobeTheme();
   const uniforms = useMemo(
-    () => ({ uColor: { value: new Color(colors.ice400) }, uStrength: { value: 0.7 } }),
-    [],
+    () => ({ uColor: { value: new Color(colors.ice400) }, uStrength: { value: theme === "dark" ? 0.7 : 0.45 } }),
+    [colors, theme],
   );
   return (
     <mesh scale={1.035}>
@@ -98,7 +99,7 @@ function Atmosphere() {
         side={BackSide}
         transparent
         depthWrite={false}
-        blending={AdditiveBlending}
+        blending={theme === "dark" ? AdditiveBlending : NormalBlending}
       />
     </mesh>
   );
@@ -158,6 +159,7 @@ export interface GlobeSceneContentProps extends GlobeProps {
 }
 
 export function Globe({ mask, tier, pixelRatio, routeState, showAlternative, shipmentProgress, origin, destination, alternativeVia }: GlobeSceneContentProps) {
+  const { theme, colors } = useGlobeTheme();
   const settings = tierSettings(tier);
   const main = useMemo(() => routePoints(origin, destination, SEGMENTS, ARC_LIFT), [origin, destination]);
   const alt = useMemo(() => routePoints(origin, destination, SEGMENTS, ARC_LIFT * 0.8, alternativeVia), [origin, destination, alternativeVia]);
@@ -166,15 +168,15 @@ export function Globe({ mask, tier, pixelRatio, routeState, showAlternative, shi
   const marker = shipmentProgress === null ? null : main[Math.round(Math.min(Math.max(shipmentProgress, 0), 1) * SEGMENTS)];
   return (
     <group>
-      <Stars count={settings.stars} />
+      <Stars count={theme === "dark" ? settings.stars : 0} />
       <Body />
       {mask && <LandDots mask={mask} samples={settings.dotSamples} pixelRatio={pixelRatio} />}
       <Atmosphere />
-      <Arc points={main} color={ROUTE_COLOR[routeState]} dashed={false} progress={shipmentProgress ?? 1} />
+      <Arc points={main} color={routeColor(routeState, colors)} dashed={false} progress={shipmentProgress ?? 1} />
       {showAlternative && <Arc points={alt} color={colors.planner300} dashed progress={1} />}
       <Node position={startPos} color={colors.ice300} />
       <Node position={endPos} color={colors.ice300} />
-      {marker && <Node position={marker} color={ROUTE_COLOR[routeState]} radius={0.026} />}
+      {marker && <Node position={marker} color={routeColor(routeState, colors)} radius={0.026} />}
     </group>
   );
 }

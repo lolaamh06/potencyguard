@@ -9,6 +9,7 @@ const base = baseline as unknown as ReplayFile;
 const hs = hidden as unknown as ReplayFile;
 
 beforeEach(() => {
+  useCr.getState().clearDecisions();
   useCr.getState().selectScenario("baseline_ok", 0);
   useCr.getState().setSpeed(4);
 });

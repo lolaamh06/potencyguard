@@ -319,26 +319,25 @@ export function wallStamp(date: Date): string {
 // ---------------------------------------------------------------- recording mode
 
 export type RecAction =
-  | { type: "scenario"; id: ScenarioId; speed: Speed }
+  | { type: "go"; hash: string; speed?: Speed }
   | { type: "tamper"; entryIndexInList: number }
-  | { type: "approve" }
-  | { type: "provenance"; open: boolean };
+  | { type: "approve" };
 
 export interface RecStep {
   atMs: number;
   action: RecAction;
 }
 
-/** The scripted, repeatable demo sequence (fixed timing; at 16x a simulated hour takes 0.125 s). */
+/** The scripted, repeatable demo sequence on the new pages (fixed timing; at 16x a simulated hour takes 0.125 s). */
 export const REC_SEQUENCE: readonly RecStep[] = [
-  { atMs: 0, action: { type: "scenario", id: "baseline_ok", speed: 16 } },
-  { atMs: 7000, action: { type: "scenario", id: "hidden_spoilage", speed: 16 } },
-  { atMs: 15000, action: { type: "tamper", entryIndexInList: 2 } },
-  { atMs: 21000, action: { type: "approve" } },
-  { atMs: 25000, action: { type: "provenance", open: true } },
-  { atMs: 29000, action: { type: "provenance", open: false } },
+  { atMs: 0, action: { type: "go", hash: "#/shipments/baseline_ok", speed: 16 } },
+  { atMs: 7000, action: { type: "go", hash: "#/shipments/hidden_spoilage", speed: 16 } },
+  { atMs: 15000, action: { type: "approve" } },
+  { atMs: 19000, action: { type: "go", hash: "#/proof" } },
+  { atMs: 21000, action: { type: "tamper", entryIndexInList: 1 } },
+  { atMs: 27000, action: { type: "go", hash: "#/about" } },
 ];
-export const REC_LENGTH_MS = 33000;
+export const REC_LENGTH_MS = 31000;
 
 /** Steps that fall in (prevMs, nowMs]; the first call uses prevMs = -1 so a step at 0 fires. */
 export function dueSteps(steps: readonly RecStep[], prevMs: number, nowMs: number): RecStep[] {

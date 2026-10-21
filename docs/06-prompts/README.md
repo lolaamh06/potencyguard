@@ -7,3 +7,4 @@
 - `phase-f2-prompt.md`: the Phase F2 prompt (frontend foundation).
 - `phase-f3-prompt.md`: the Phase F3 prompt (the Story, Prologue and Chapters 1 to 7).
 - `phase-f4-prompt.md`: the Phase F4 prompt (the Control Room and final polish).
+- `phase-f5-prompt.md`: the Phase F5 prompt (product UX overhaul).

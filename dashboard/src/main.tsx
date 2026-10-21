@@ -5,6 +5,8 @@ import { ErrorBoundary } from "./app/ErrorBoundary";
 import "./theme/fonts.css";
 import "./theme/tokens.css";
 import "./theme/global.css";
+import "./theme/tokens-light.css";
+import "./theme/pages.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

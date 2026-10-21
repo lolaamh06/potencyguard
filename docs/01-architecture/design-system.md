@@ -184,3 +184,11 @@ Real DOM text everywhere (selectable); landmarks and headings; focus rings; the 
 ## 11. Assets and licences
 
 Fonts: SIL OFL 1.1 (section 8). Icons: hand-drawn inline SVG (no licence needed, no third-party set). Map data (F2 and later): Natural Earth, public domain, with a README beside the asset. No images, models or music of unknown origin. No vendor logos.
+
+
+## Phase F5 additions: light theme and product components
+
+- **Light tokens** (`dashboard/src/theme/tokens-light.css`, hex in `palette.ts`): the same variable names as the dark set, with pale surfaces (`--void` #eef3f9, cards #ffffff) and dark text and accents (`--frost` #0b1b2e, `--mist-hi` #33445b, `--ice-400` #0a6fa0). `palette.test.ts` computes the WCAG ratio of every text/background pair in both themes (body and secondary text at least 7:1; tertiary, accent and status text at least 4.5:1; control borders 3:1) and checks that the CSS matches the palettes.
+- **Theme choice:** Light, Dark or System, remembered in `localStorage` (guarded), applied by an inline script in `index.html` before first paint. The Story is a dark cinematic stage in both themes (`data-theme="dark"` on its wrapper).
+- **Components:** buttons (primary, secondary, danger, quiet, big), status chip (colour, icon and word together), card, "?" help popover, modal dialog, tour card, segmented switch, cost bars, timeline, details expander. Base text is 16 px; the smallest label is 14 px; chart text is at least 12 px.
+- **Words:** every user-facing term lives in `dashboard/src/copy/glossary.ts` in a Simple and a Technical register.

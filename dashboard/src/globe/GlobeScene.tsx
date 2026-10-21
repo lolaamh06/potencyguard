@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 import { Component, type ReactNode } from "react";
 import { Vector3 } from "three";
 import { useAppStore } from "../app/appStore";
+import { useUi } from "../app/ui";
 import {
   DEFAULT_GOVERNOR,
   effectiveDpr,
@@ -17,12 +18,12 @@ import {
 import { perf } from "../quality/perf";
 import { useQualityStore } from "../quality/qualityStore";
 import { scrollState } from "../scroll/scrollState";
-import { colors } from "../theme/tokens";
 import { cameraPose } from "./cameraPath";
 import { stageCamera } from "./stageCamera";
 import { Stage } from "./Stage";
 import { useStoryBundle } from "../data/useStoryData";
 import { useGlobeStore } from "./globeStore";
+import { useGlobeTheme } from "./useGlobeTheme";
 import { Fallback2D } from "./Fallback2D";
 import { Globe } from "./Globe";
 import { DEFAULT_GLOBE_PROPS, type GlobeProps } from "./types";
@@ -166,6 +167,8 @@ class SceneBoundary extends Component<{ children: ReactNode; props: GlobeProps }
 }
 
 export function GlobeScene(props: Partial<GlobeProps>) {
+  const { theme, colors } = useGlobeTheme();
+  const cinematic = useUi((st) => st.cinematic);
   const storeProps = useGlobeStore((s) => s.props);
   const layoutNow = useGlobeStore((s) => s.layout);
   const globeProps: GlobeProps = { ...DEFAULT_GLOBE_PROPS, ...storeProps, ...props };
@@ -180,8 +183,8 @@ export function GlobeScene(props: Partial<GlobeProps>) {
 
   // Behind the chart chapters the globe is dimmed so the figures read clearly.
   useEffect(() => {
-    layer.current?.classList.toggle("dim", [1, 2, 3, 4, 6].includes(chapter));
-  }, [chapter]);
+    layer.current?.classList.toggle("dim", cinematic ? [1, 2, 3, 4, 6].includes(chapter) : true);
+  }, [chapter, cinematic]);
 
   // Reduced motion: the camera stays still, so each chapter change crossfades the picture instead.
   useEffect(() => {
@@ -209,7 +212,7 @@ export function GlobeScene(props: Partial<GlobeProps>) {
           <ContextGuard />
           <Globe {...globeProps} mask={mask} tier={tier} pixelRatio={dpr} />
           <Stage cloud={story?.ch5 ?? null} glow={story?.hidden?.frames[0]?.potency ?? 1} />
-          {settings.bloom && (
+          {settings.bloom && theme === "dark" && (
             <EffectComposer multisampling={0}>
               <Bloom luminanceThreshold={0.35} intensity={0.55} mipmapBlur />
               <Vignette eskil={false} offset={0.25} darkness={0.7} />

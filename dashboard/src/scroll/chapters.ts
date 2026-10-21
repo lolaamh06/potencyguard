@@ -20,7 +20,7 @@ export const CHAPTERS: readonly Chapter[] = [
   { id: "chapter-4", name: "A box that thinks", vh: 130, rendered: true },
   { id: "chapter-5", name: "Plan for the worst five percent", vh: 160, rendered: true },
   { id: "chapter-6", name: "A human decides", vh: 100, rendered: true },
-  { id: "chapter-7", name: "Enter the control room", vh: 40, rendered: true },
+  { id: "chapter-7", name: "Try the demo", vh: 40, rendered: true },
 ];
 
 export function clamp01(value: number): number {

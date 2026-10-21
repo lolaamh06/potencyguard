@@ -4,7 +4,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReplayFile } from "../data/types";
 import { useScrollTicker } from "../scroll/scrollState";
-import { colors } from "../theme/tokens";
+import { useUi } from "../app/ui";
+import { term } from "../copy/glossary";
+import { PALETTES } from "../theme/palette";
 import { crClock } from "./store";
 import { excursionBands, frameIndexAt, SAFE_HIGH_C, SAFE_LOW_C } from "./logic";
 
@@ -17,7 +19,10 @@ interface Box {
 const PAD_L = 0.062;
 const PAD_R = 0.015;
 
-export function TimeChart({ replay }: { replay: ReplayFile }) {
+export function TimeChart({ replay, simple = false }: { replay: ReplayFile; simple?: boolean }) {
+  const resolved = useUi((st) => st.resolved);
+  const mode = useUi((st) => st.mode);
+  const colors = PALETTES[resolved];
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [box, setBox] = useState<Box>({ w: 600, h: 300, font: 12 });
@@ -59,12 +64,12 @@ export function TimeChart({ replay }: { replay: ReplayFile }) {
     const axis = box.font * 1.9;
     const usable = box.h - axis - box.font * 0.4;
     const gap = box.font * 0.5;
-    const hT = usable * 0.5;
-    const hR = usable * 0.25 - gap;
-    const hC = usable * 0.25 - gap;
+    const hT = simple ? usable : usable * 0.5;
+    const hR = simple ? 0 : usable * 0.25 - gap;
+    const hC = simple ? 0 : usable * 0.25 - gap;
     const top = box.font * 0.3;
     return { left, right, top, hT, hR, hC, yT: top, yR: top + hT + gap, yC: top + hT + hR + gap * 2, axis };
-  }, [box]);
+  }, [box, simple]);
 
   const x = useCallback((h: number) => geo.left + (h / durationH) * (geo.right - geo.left), [geo, durationH]);
   const yTemp = useCallback((c: number) => geo.yT + (1 - (c - ranges.tLo) / (ranges.tHi - ranges.tLo)) * geo.hT, [geo, ranges]);
@@ -89,11 +94,13 @@ export function TimeChart({ replay }: { replay: ReplayFile }) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, box.w, box.h);
     // excursion bands behind the temperature strip
-    ctx.fillStyle = "rgba(255, 122, 61, 0.16)";
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = colors.ember500;
     for (const b of bands) ctx.fillRect(x(b.fromH), geo.yT, Math.max(2, x(b.toH) - x(b.fromH)), geo.hT);
+    ctx.globalAlpha = 1;
     // safe range lines and CUSUM threshold
     ctx.lineWidth = 1;
-    ctx.strokeStyle = "rgba(94, 120, 153, 0.7)";
+    ctx.strokeStyle = colors.lineStrong;
     ctx.setLineDash([4, 5]);
     for (const c of [SAFE_LOW_C, SAFE_HIGH_C]) {
       ctx.beginPath();
@@ -101,17 +108,21 @@ export function TimeChart({ replay }: { replay: ReplayFile }) {
       ctx.lineTo(geo.right, yTemp(c));
       ctx.stroke();
     }
-    ctx.strokeStyle = colors.ember400;
-    ctx.beginPath();
-    ctx.moveTo(geo.left, yCus(replay.meta.cusum_h));
-    ctx.lineTo(geo.right, yCus(replay.meta.cusum_h));
-    ctx.stroke();
+    if (!simple) {
+      ctx.strokeStyle = colors.ember400;
+      ctx.beginPath();
+      ctx.moveTo(geo.left, yCus(replay.meta.cusum_h));
+      ctx.lineTo(geo.right, yCus(replay.meta.cusum_h));
+      ctx.stroke();
+    }
     ctx.setLineDash([]);
-    ctx.beginPath();
-    ctx.strokeStyle = "rgba(94, 120, 153, 0.7)";
-    ctx.moveTo(geo.left, yRes(0));
-    ctx.lineTo(geo.right, yRes(0));
-    ctx.stroke();
+    if (!simple) {
+      ctx.beginPath();
+      ctx.strokeStyle = colors.lineStrong;
+      ctx.moveTo(geo.left, yRes(0));
+      ctx.lineTo(geo.right, yRes(0));
+      ctx.stroke();
+    }
 
     const line = (color: string, width: number, dash: number[], pick: (i: number) => number | null, yy: (v: number) => number) => {
       ctx.beginPath();
@@ -132,8 +143,10 @@ export function TimeChart({ replay }: { replay: ReplayFile }) {
     };
     line(colors.mistHi, 2, [6, 5], (i) => frames[i].twin_c, yTemp);
     line(colors.ice400, 3, [], (i) => frames[i].temp_c, yTemp);
-    line(colors.dangerText, 2, [], (i) => frames[i].residual_c, yRes);
-    line(colors.ember500, 2, [], (i) => Math.max(frames[i].cusum_neg ?? 0, frames[i].cusum_pos ?? 0), yCus);
+    if (!simple) {
+      line(colors.dangerText, 2, [], (i) => frames[i].residual_c, yRes);
+      line(colors.ember500, 2, [], (i) => Math.max(frames[i].cusum_neg ?? 0, frames[i].cusum_pos ?? 0), yCus);
+    }
     wrap.current?.querySelectorAll<SVGGElement>(".alert-mark").forEach((g) => (g.style.opacity = Number(g.dataset.t) <= crClock.tS ? "1" : "0"));
     // the clock
     const cx = x(frames[idx].t_s / 3600);
@@ -141,13 +154,13 @@ export function TimeChart({ replay }: { replay: ReplayFile }) {
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(cx, geo.top);
-    ctx.lineTo(cx, geo.yC + geo.hC);
+    ctx.lineTo(cx, simple ? geo.yT + geo.hT : geo.yC + geo.hC);
     ctx.stroke();
-  }, [frames, box, geo, bands, x, yTemp, yRes, yCus, replay.meta.cusum_h]);
+  }, [frames, box, geo, bands, x, yTemp, yRes, yCus, replay.meta.cusum_h, simple, colors]);
   useScrollTicker(draw);
   useEffect(() => {
     lastDrawn.current = -1;
-  }, [replay, box]);
+  }, [replay, box, resolved, simple]);
 
   const alerts = useMemo(() => replay.events.filter((e) => e.type === "physics_check_fired"), [replay]);
   const ticks = useMemo(() => {
@@ -159,24 +172,24 @@ export function TimeChart({ replay }: { replay: ReplayFile }) {
   return (
     <div className="chart-wrap" ref={wrap}>
       <canvas ref={canvas} className="chart-canvas" aria-hidden="true" />
-      <svg className="chart-svg" width={box.w} height={box.h} role="img" aria-label={`Reported temperature against the physics twin's prediction, residual and CUSUM strips for the recorded scenario ${replay.meta.scenario_id}, on one time axis. Alert markers show when physics checks fired.`}>
+      <svg className="chart-svg" width={box.w} height={box.h} role="img" aria-label={`Measured temperature in the box against the expected temperature for the sample shipment ${replay.meta.scenario_id}. Triangles mark when a safety check fired.`}>
         <g fontSize={f} fill="var(--mist-hi)">
           <text x={4} y={geo.yT + f}>°C</text>
-          <text x={4} y={geo.yR + f}>residual</text>
-          <text x={4} y={geo.yC + f}>CUSUM</text>
+          {!simple && <text x={4} y={geo.yR + f}>{term("difference", mode)}</text>}
+          {!simple && <text x={4} y={geo.yC + f}>{term("alarmStrip", mode)}</text>}
           <text x={geo.left + 6} y={yTemp(SAFE_HIGH_C) - 4} fill="var(--mist)">{SAFE_HIGH_C} °C</text>
           <text x={geo.left + 6} y={yTemp(SAFE_LOW_C) + f + 2} fill="var(--mist)">{SAFE_LOW_C} °C</text>
-          <text x={geo.right - 4} y={yCus(replay.meta.cusum_h) - 4} textAnchor="end" fill="var(--ember-400)">alarm threshold h = {replay.meta.cusum_h}</text>
+          {!simple && <text x={geo.right - 4} y={yCus(replay.meta.cusum_h) - 4} textAnchor="end" fill="var(--ember-400)">alarm threshold h = {replay.meta.cusum_h}</text>}
           {ticks.map((h) => (
             <text key={h} x={x(h)} y={box.h - f * 0.3} textAnchor="middle">{h} h</text>
           ))}
           {bands.slice(0, 3).map((b, i) => (
-            <text key={i} x={x(b.fromH) + 3} y={geo.yT + f * 2.1 + i * 0} fill="var(--ember-500)">excursion</text>
+            <text key={i} x={x(b.fromH) + 3} y={geo.yT + f * 2.1 + i * 0} fill="var(--ember-500)">{mode === "simple" ? "outside the safe range" : "excursion"}</text>
           ))}
         </g>
         {alerts.slice(0, 4).map((a, i) => (
           <g key={i} transform={`translate(${x(a.t_s / 3600)} 0)`} style={{ opacity: crClock.tS >= a.t_s ? 1 : 0 }} className="alert-mark" data-t={a.t_s}>
-            <line y1={geo.top} y2={geo.yC + geo.hC} stroke="var(--danger-text)" strokeDasharray="3 4" />
+            <line y1={geo.top} y2={simple ? geo.yT + geo.hT : geo.yC + geo.hC} stroke="var(--danger-text)" strokeDasharray="3 4" />
             <polygon points={`0,${geo.top + 2} -6,${geo.top - 6} 6,${geo.top - 6}`} fill="var(--danger-text)" />
           </g>
         ))}

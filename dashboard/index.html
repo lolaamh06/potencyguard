@@ -6,6 +6,17 @@
     <title>PotencyGuard</title>
     <meta name="description" content="PotencyGuard: a simulation of a medicine shipment, on synthetic data." />
     <link rel="icon" href="data:," />
+    <script>
+      // Apply the saved theme before first paint (no flash). Storage may be blocked: fall back to the system setting.
+      (function () {
+        var t = "system";
+        try { t = localStorage.getItem("pg.theme") || "system"; } catch (e) {}
+        var dark = false;
+        try { dark = matchMedia("(prefers-color-scheme: dark)").matches; } catch (e) {}
+        var r = t === "light" || t === "dark" ? t : dark ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", r);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

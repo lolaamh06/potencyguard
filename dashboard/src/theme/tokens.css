@@ -1,7 +1,8 @@
 /* PotencyGuard design tokens: the single source of truth for colour, type, spacing and motion.
    Copied from docs/01-architecture/style-frames/tokens.css (Phase F1); contrast ratios are in
    docs/01-architecture/design-system.md. The same colours are exported to TypeScript in tokens.ts. */
-:root {
+:root,
+[data-theme="dark"] {
   /* surfaces */
   --void: #04070d;
   --ink-900: #070c16;

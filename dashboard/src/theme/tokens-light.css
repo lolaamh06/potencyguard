@@ -1,0 +1,34 @@
+/* The light theme: the same variable names as tokens.css with light values (palette.ts holds them as
+   hex; palette.test.ts checks the contrast rules and that this file matches). Applied with
+   data-theme="light" on the html element before first paint (see index.html). */
+:root[data-theme="light"] {
+  --void: #eef3f9;
+  --ink-900: #ffffff;
+  --ink-800: #f7fafd;
+  --ink-700: #e4ecf6;
+  --line: #cdd8e6;
+  --line-strong: #5b6f8a;
+
+  --frost: #0b1b2e;
+  --mist-hi: #33445b;
+  --mist: #4a5d75;
+
+  --ice-400: #0a6fa0;
+  --ice-300: #0b5c86;
+  --ice-700: #cfe6f3;
+  --ember-400: #8a5100;
+  --ember-500: #a84400;
+  --ember-600: #c0281a;
+  --danger-text: #b3261e;
+  --verify: #0b7a55;
+  --planner: #5545d0;
+  --planner-300: #4535b8;
+
+  --elev-1: 0 0 0 1px var(--line), 0 6px 20px rgba(20, 40, 70, 0.1);
+  --elev-2: 0 0 0 1px var(--line-strong), 0 14px 40px rgba(20, 40, 70, 0.18);
+  --glow-ice: 0 0 0 transparent;
+  --glow-verify: 0 0 0 transparent;
+  --glow-planner: 0 0 0 transparent;
+  --glow-danger: 0 0 0 transparent;
+  color-scheme: light;
+}

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useAppStore } from "../app/appStore";
 import { tierSettings } from "../quality/governor";
 import { scrollState, useScrollTicker } from "../scroll/scrollState";
-import { colors } from "../theme/tokens";
+import { useGlobeTheme } from "./useGlobeTheme";
 import { cameraPose } from "./cameraPath";
 import { routePoints } from "./geo";
 import { sampleLandPoints } from "./landPoints";
@@ -27,6 +27,7 @@ export function Fallback2D(props: GlobeProps) {
   const reduced = useAppStore((s) => s.reducedMotion);
   const lastDrawn = useRef(-1);
   const layoutNow = useGlobeStore((s) => s.layout);
+  const { colors } = useGlobeTheme();
   const points = useRef<Float32Array | null>(null);
 
   useEffect(() => {
@@ -119,7 +120,7 @@ export function Fallback2D(props: GlobeProps) {
         ctx.fill();
       }
     }
-  }, [props.origin, props.destination, props.routeState, props.showAlternative, props.alternativeVia, reduced, layoutNow]);
+  }, [props.origin, props.destination, props.routeState, props.showAlternative, props.alternativeVia, reduced, layoutNow, colors]);
 
   useScrollTicker(draw);
   useEffect(() => {
