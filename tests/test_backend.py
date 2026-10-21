@@ -1026,7 +1026,16 @@ def test_unchanged_files_and_no_key_in_the_repository():
     )
     assert result.returncode == 0
     marker = ("-----" + "BEGIN").encode()
-    skip = {".git", "node_modules", "__pycache__", ".pytest_cache", ".ruff_cache", "runs"}
+    skip = {
+        ".git",
+        ".venv",
+        "node_modules",
+        "dist",
+        "__pycache__",
+        ".pytest_cache",
+        ".ruff_cache",
+        "runs",
+    }
     for path in ROOT.rglob("*"):
         if any(part in skip for part in path.relative_to(ROOT).parts) or not path.is_file():
             continue

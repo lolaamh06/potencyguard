@@ -44,7 +44,7 @@ A rejected fault (unknown type, bad value, missing parameter) returns an error r
 From the repo root in PowerShell (`$py` is the venv python):
 
 ```
-$py = "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe"
+$py = ".\.venv\Scripts\python.exe"   # run from the repo root after scripts\setup.ps1
 & $py -m simulator generate --all                       # golden recordings, fixed seeds, data/recordings/
 & $py -m simulator generate --scenario reefer_failure --seed 5      # goes to data/runs/ unless --out-dir
 & $py -m simulator generate --scenario reefer_failure --random-seed # prints the seed it used

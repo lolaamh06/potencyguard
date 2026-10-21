@@ -15,7 +15,7 @@ The tracker integrates each interval with the temperature at its end (right endp
 From the repo root in PowerShell:
 
 ```
-$py = "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe"
+$py = ".\.venv\Scripts\python.exe"   # run from the repo root after scripts\setup.ps1
 & $py -m edge potency --recording data/recordings/spoof_attempt.jsonl
 & $py -m edge potency --all
 ```
@@ -32,7 +32,7 @@ The summary table also prints the simulated hour at which potency first fell bel
 - `detector_config.py`: reads `config/detectors.yaml`.
 
 ```
-$py = "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe"
+$py = ".\.venv\Scripts\python.exe"   # run from the repo root after scripts\setup.ps1
 & $py -m edge twin --recording data/recordings/hidden_spoilage.jsonl
 & $py -m edge twin --all
 & $py -m edge calibrate
@@ -46,7 +46,7 @@ $py = "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe"
 - `assessment.py`: `worst_case_bound()` is an UPPER BOUND on the damage since that time (no cooling at all, the honest ambient channel, one heat allowance), `assess()` combines it with the reported potency into a `PotencyAssessment`, and `TrustAssessor` does it one reading at a time. It never uses ground truth.
 
 ```
-$py = "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe"
+$py = ".\.venv\Scripts\python.exe"   # run from the repo root after scripts\setup.ps1
 & $py -m edge twin --recording data/recordings/hidden_spoilage.jsonl
 & $py -m edge twin --all
 ```

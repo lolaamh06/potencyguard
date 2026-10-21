@@ -13,7 +13,7 @@
 - Signing protects records after signing and does not stop a lie at the sensor: the planner uses the physics-based trust level, never the signature, to decide whether a reading may drive a decision.
 
 ```
-$py = "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe"
+$py = ".\.venv\Scripts\python.exe"   # run from the repo root after scripts\setup.ps1
 & $py -m planner decide --recording data/recordings/reefer_failure.jsonl --at-hour 20
 & $py -m planner demo
 & $py -m planner human --log data\runs\<decision log>.sqlite --seq 0 --who "QA lead" --action override --final-action quarantine --reason "hold for review"

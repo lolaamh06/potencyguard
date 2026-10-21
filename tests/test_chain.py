@@ -463,7 +463,16 @@ def test_a_key_is_created_once_stored_outside_and_reloaded(tmp_path):
 
 def test_no_key_file_or_pem_block_exists_anywhere_in_the_repo():
     marker = ("-----" + "BEGIN").encode()
-    skip = {".git", "node_modules", "__pycache__", ".pytest_cache", ".ruff_cache", "runs"}
+    skip = {
+        ".git",
+        ".venv",
+        "node_modules",
+        "dist",
+        "__pycache__",
+        ".pytest_cache",
+        ".ruff_cache",
+        "runs",
+    }
     found = []
     for path in ROOT.rglob("*"):
         if any(part in skip for part in path.relative_to(ROOT).parts) or not path.is_file():

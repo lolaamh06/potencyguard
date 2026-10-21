@@ -9,7 +9,7 @@
 - A device key must be registered before its ledgers are accepted; a public key sent with a ledger is ignored. Signing protects records after signing and does not stop a lie at the sensor, so the backend recomputes the physics checks from the signed readings.
 
 ```
-$py = "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe"
+$py = ".\.venv\Scripts\python.exe"   # run from the repo root after scripts\setup.ps1
 & $py -m backend replay --all
 & $py -m backend replay --recording data/recordings/hidden_spoilage.jsonl --at-hour 50 --tamper edit
 & $py -m backend serve

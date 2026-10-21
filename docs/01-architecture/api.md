@@ -37,12 +37,12 @@ JSON only. Errors look like `{"error": "<code>", "message": "..."}` (422 adds a 
 Start a server (leave it running in its own window), then in another window:
 
 ```
-$py = "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe"
+$py = ".\.venv\Scripts\python.exe"   # run from the repo root after scripts\setup.ps1
 & $py -m backend serve                       # http://127.0.0.1:8765, no authentication
 ```
 
 ```
-$py = "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe"
+$py = ".\.venv\Scripts\python.exe"   # run from the repo root after scripts\setup.ps1
 $u  = "http://127.0.0.1:8765"
 $h  = @{ "X-Caller" = "my-demo" }
 
