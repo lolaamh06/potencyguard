@@ -1,7 +1,10 @@
 # dashboard
 
-- What lives here: the cinematic Story and Control Room (Phases F1 to F6). Today it holds only a throwaway WebGL smoke test (Vite + React + TypeScript) that checks smooth 3D and scrolling on this laptop.
-- Run it: `npm run dev`, then open http://localhost:5173. Scroll, and press Q to cycle the quality tier. `npm run build` and `npm test` check the code.
-- Source code is in `src/smoke/`. Quality-tier logic is in `qualityTier.ts`, with tests next to it.
-- OneDrive note: `node_modules` is a junction to `%LOCALAPPDATA%\potencyguard\dashboard-node_modules\node_modules`, so the packages are not synced. The target folder itself must be named `node_modules`, otherwise Node cannot resolve packages.
-- Warning: npm install or npm ci REPLACES the junction with a real folder inside OneDrive. Only run them when a phase says so, then follow the recovery steps. A plain `npm install` replaces the junction with a real folder. To add or change packages, run `npm install`, then move the new `node_modules` folder to the target above and re-create the junction with `cmd /c mklink /J`.
+- What lives here: the cinematic Story and Control Room front end (Vite + React + TypeScript + three.js). Phase F2 built the foundation: app shell, scroll rig, 3D globe, quality governor, mode adapter and the TypeScript potency mirror. Chapters and Control Room panels come in F3 to F5.
+- Run it: `npm run dev` (serves http://127.0.0.1:5173). `npm run build` and `npm test` check the code. Open `/?tier=high`, `/?mode=replay#/control-room` and so on.
+- URL options: `?mode=story|replay|live` (data source, default story), `?tier=high|medium|low|fallback2d` (forces a quality tier). Keys: `?` shows the list; `Q` quality, `D` performance numbers, `M` reduced motion, `G` Story, `C` Control Room, Space and arrows to move.
+- Source: `src/app` (shell), `src/scroll` (scroll rig and chapter table), `src/globe` (the globe), `src/quality` (governor), `src/data` (adapter and validation), `src/potency` (TypeScript potency mirror, tested against `shared/test-vectors/`), `src/theme` (tokens, fonts). `src/smoke/` is the old Phase 0 test and is unused.
+- Data: `public/replay/` is written by `python scripts/export_replay.py`; `public/globe/` by `python scripts/make_land_mask.py` (README there names the source and licence). Fonts in `public/fonts/` are SIL OFL 1.1.
+- Live mode reads the backend (`python -m backend serve`) through the dev proxy `/api`, read-only.
+- OneDrive note: `node_modules` is a junction to `%LOCALAPPDATA%\potencyguard\dashboard-node_modules\node_modules`, so packages are not synced.
+- Warning: a plain `npm install` or `npm ci` inside this folder REPLACES the junction with a real folder inside OneDrive. To add or change a package, follow docs/03-decisions/decision-0011-frontend-foundation.md section 1: install in `%LOCALAPPDATA%\potencyguard\dashboard-node_modules`, copy `package.json` and `package-lock.json` back, then check the junction.

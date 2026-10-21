@@ -31,3 +31,8 @@
 ## Phase 6 script
 
 - `python scripts/check_phase6.py` is the eighth check in `scripts/run_checks.py`: a good ledger is registered, verified, decided and auto-approved through the API (in process), a tampered copy is rejected and quarantined, the database refuses a DELETE, the sandbox adapter is a stub, and the golden files are unchanged. `scripts/tamper_demo.py` is reused by `python -m backend replay --tamper`.
+
+## Phase F2 scripts
+
+- `python scripts/export_replay.py [--out DIR]` writes replay files for the five featured scenarios (baseline_ok, door_open_excursion, reefer_failure, spoof_attempt, hidden_spoilage) and an index to `dashboard/public/replay/`. Read-only use of the existing pipeline; deterministic; TEST-ONLY signing key derived inside the script. Tested by `tests/test_export_replay.py`.
+- `python scripts/make_land_mask.py [--width N]` downloads Natural Earth 110m land once (public domain), makes the globe's land mask PNG and its README in `dashboard/public/globe/`. Needs network; the source download is not kept. Standard library only.

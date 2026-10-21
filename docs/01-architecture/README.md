@@ -9,3 +9,4 @@
 - `design-system.md` (F1): colour, type, spacing, motion tokens and the font proposal. Binding tokens are in `style-frames/tokens.css`.
 - `storyboard.md` (F1): scenes, copy, timing and the Control Room wireframe. Items marked PROPOSE await the decision-maker.
 - `style-frames/` (F1): four static pages, the data generator and the self-hosted fonts. See its README.
+- Phase F2 (frontend foundation) is documented in `docs/02-phase-reports/phase-f2-report.md` and `docs/03-decisions/decision-0011-frontend-foundation.md`. The code is in `dashboard/src/`.

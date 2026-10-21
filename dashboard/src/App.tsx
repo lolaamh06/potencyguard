@@ -1,75 +1,85 @@
-// Smoke-test page: Lenis + GSAP ScrollTrigger on one shared ticker drive a scroll-scrubbed camera.
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Lenis from "lenis";
-import { useEffect, useRef } from "react";
-import { PerfOverlay } from "./smoke/PerfOverlay";
-import { SmokeScene } from "./smoke/SmokeScene";
-import { liveState, useQualityStore } from "./smoke/useQualityStore";
+import { useEffect } from "react";
+import { Chrome } from "./app/Chrome";
+import { Shortcuts } from "./app/Shortcuts";
+import { goTo, useRoute } from "./app/route";
+import { useAppStore } from "./app/appStore";
+import { ControlRoom } from "./controlroom/ControlRoom";
+import { currentMode, useAdapter } from "./data/useAdapter";
+import { GlobeScene } from "./globe/GlobeScene";
+import { PerfOverlay } from "./quality/PerfOverlay";
+import { tierSettings } from "./quality/governor";
+import { useQualityStore } from "./quality/qualityStore";
+import { actionForKey, keyBelongsToControl, stepChapter } from "./scroll/keyboard";
+import { CHAPTERS } from "./scroll/chapters";
+import { scrollApi, scrollState } from "./scroll/scrollState";
+import { Story } from "./story/Story";
 
-gsap.registerPlugin(ScrollTrigger);
-
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-function webglAvailable(): boolean {
-  try {
-    const canvas = document.createElement("canvas");
-    return Boolean(canvas.getContext("webgl2") ?? canvas.getContext("webgl"));
-  } catch {
-    return false;
-  }
-}
-
-const hasWebgl = webglAvailable();
+const mode = currentMode();
+const RENDERED_COUNT = CHAPTERS.filter((c) => c.rendered).length;
 
 export function App() {
-  const spacer = useRef<HTMLDivElement>(null);
+  const route = useRoute();
+  const data = useAdapter(mode);
+  const sceneStatus = useAppStore((s) => s.sceneStatus);
+  const reduced = useAppStore((s) => s.reducedMotion);
+  const tier = useQualityStore((s) => s.tier);
+  const grain = tierSettings(tier).grain;
 
-  // Everything is created here and fully cleaned up, because StrictMode mounts effects twice in dev.
+  // The Control Room has no scroll: the globe holds its last pose.
   useEffect(() => {
-    const lenis = reducedMotion ? null : new Lenis({ autoRaf: false });
-    const tick = (time: number) => lenis?.raf(time * 1000);
-    gsap.ticker.add(tick);
-    gsap.ticker.lagSmoothing(0);
-    lenis?.on("scroll", ScrollTrigger.update);
-
-    const trigger = ScrollTrigger.create({
-      trigger: spacer.current,
-      start: "top top",
-      end: "bottom bottom",
-      scrub: true,
-      onUpdate: (self) => {
-        liveState.scrollProgress = self.progress;
-      },
-    });
-
-    return () => {
-      trigger.kill();
-      gsap.ticker.remove(tick);
-      gsap.ticker.lagSmoothing(500, 33);
-      lenis?.destroy();
-    };
-  }, []);
+    if (route === "control-room") scrollState.progress = 1;
+    else window.scrollTo(0, 0);
+  }, [route]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === "q") useQualityStore.getState().cycle();
+    document.documentElement.dataset.reducedMotion = String(reduced);
+  }, [reduced]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (keyBelongsToControl((event.target as HTMLElement | null)?.tagName, event.key)) return;
+      const app = useAppStore.getState();
+      const action = actionForKey(event, route === "story" && !app.helpOpen);
+      if (!action) return;
+      event.preventDefault();
+      switch (action.kind) {
+        case "scrollBy":
+          scrollApi.by(action.viewports);
+          break;
+        case "chapter":
+          scrollApi.toChapter(stepChapter(app.chapter, action.delta, RENDERED_COUNT));
+          break;
+        case "edge":
+          scrollApi.toEdge(action.where);
+          break;
+        case "app":
+          if (action.name === "tier") useQualityStore.getState().cycle();
+          else if (action.name === "perf") app.togglePerf();
+          else if (action.name === "help") app.setHelpOpen(!app.helpOpen);
+          else if (action.name === "reduce") app.toggleReducedMotion();
+          else if (action.name === "close") app.setHelpOpen(false);
+          else if (action.name === "story") goTo("story");
+          else if (action.name === "controlRoom") goTo("control-room");
+          else if (action.name === "fullscreen") {
+            if (document.fullscreenElement) void document.exitFullscreen();
+            else void document.documentElement.requestFullscreen?.().catch(() => {});
+          }
+          break;
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [route]);
 
   return (
     <>
-      {hasWebgl ? (
-        <SmokeScene reducedMotion={reducedMotion} />
-      ) : (
-        <p className="notice">3D is unavailable on this device</p>
-      )}
-      <main ref={spacer} className="spacer" aria-label="Scroll to move the camera">
-        <p className="hint">Scroll. Press Q to change quality.</p>
-      </main>
+      <GlobeScene />
+      {grain > 0 && <div className="grain" style={{ opacity: grain }} aria-hidden="true" />}
+      <Chrome route={route} />
+      {route === "story" ? <Story /> : <ControlRoom mode={mode} data={data} backendReachable={data.backendReachable} />}
+      <Shortcuts />
       <PerfOverlay />
+      {sceneStatus === "restoring" && <p className="notice" role="status">3D paused, restoring.</p>}
     </>
   );
 }

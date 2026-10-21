@@ -1,0 +1,35 @@
+{
+ "scenarios": [
+  {
+   "checkpoint_h": 24.0,
+   "file": "baseline_ok.json",
+   "label": "A normal journey",
+   "scenario_id": "baseline_ok"
+  },
+  {
+   "checkpoint_h": 12.0,
+   "file": "door_open_excursion.json",
+   "label": "A door left open, a short excursion",
+   "scenario_id": "door_open_excursion"
+  },
+  {
+   "checkpoint_h": 20.0,
+   "file": "reefer_failure.json",
+   "label": "Cooling fails and stays failed",
+   "scenario_id": "reefer_failure"
+  },
+  {
+   "checkpoint_h": 20.0,
+   "file": "spoof_attempt.json",
+   "label": "The sensor feed is falsified",
+   "scenario_id": "spoof_attempt"
+  },
+  {
+   "checkpoint_h": 50.0,
+   "file": "hidden_spoilage.json",
+   "label": "Falsified feed that hides real spoilage",
+   "scenario_id": "hidden_spoilage"
+  }
+ ],
+ "schema_version": "1"
+}
