@@ -27,3 +27,7 @@
 
 - `python scripts/evaluate_planner.py` writes `docs/02-phase-reports/phase-05-evaluation.md`: the oracle, the six demo scenarios, the effect of two modelling fixes, a V and beta sensitivity table and seed stability. Illustrative placeholders; not validated against real decisions.
 - `python scripts/check_phase5.py` is the seventh check in `scripts/run_checks.py` (oracle exact, same seed same numbers, untrusted never auto-approved, the decision log verifies and an edited copy is detected).
+
+## Phase 6 script
+
+- `python scripts/check_phase6.py` is the eighth check in `scripts/run_checks.py`: a good ledger is registered, verified, decided and auto-approved through the API (in process), a tampered copy is rejected and quarantined, the database refuses a DELETE, the sandbox adapter is a stub, and the golden files are unchanged. `scripts/tamper_demo.py` is reused by `python -m backend replay --tamper`.

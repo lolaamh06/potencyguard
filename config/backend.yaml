@@ -1,0 +1,25 @@
+# Backend settings (Phase 6). Simulation only. Every number is an
+# illustrative placeholder, not sourced [SOURCE NEEDED].
+# Design: docs/03-decisions/decision-0010-backend.md
+
+# NO authentication in this phase. The server binds to this address; keep it 127.0.0.1.
+host: 127.0.0.1
+port: 8765
+
+# The database file (relative paths are relative to the repository). git-ignored folder.
+database: data/runs/backend.sqlite
+
+# Which enterprise-system adapter to use: mock (logs the event, fake acknowledgement) or sandbox
+# (a stub that raises NotImplementedError; no address or credential exists in this project).
+sap_adapter: mock
+
+# A decision is a CLOSE CALL, and goes to a person, when the best two actions' CVaR differ by less
+# than this percentage of the best CVaR.
+close_call_percent: 5.0
+
+# Where the backend's planner signing key lives (null = a folder outside the repository).
+planner_key_dir: null
+
+# Page size limits for the paged endpoints.
+default_page_size: 100
+max_page_size: 1000

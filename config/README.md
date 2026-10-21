@@ -29,3 +29,7 @@
 ## Phase 5: planner.yaml
 
 Settings of the decision planner (`python -m planner`): CVaR level, number of scenarios, seed, V and beta, per-action cost, time, delay and cooling-failure assumptions, the ambient forecast model, `anomaly_cooling_fail_probability`, and the governance thresholds `v_thr` and `confidence_gap_thr`. Every number is an illustrative placeholder, not sourced [SOURCE NEEDED]; the thresholds are PROPOSE items awaiting a decision.
+
+## Phase 6: backend.yaml
+
+Settings of the backend (`python -m backend`): bind address (127.0.0.1; there is NO authentication), port, database file, enterprise adapter (`mock` by default, `sandbox` is an unimplemented stub), the close-call percentage (illustrative placeholder) and page sizes.
