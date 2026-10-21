@@ -30,11 +30,17 @@ desktop.ini
 *.env
 *.pem
 *.key
+*.p8
+*.pk8
+*.priv
+id_ed25519*
+device_ed25519*
 keys/
 
 # Generated data and logs
 data/generated/
 data/runs/
+*.pubkey
 assets-raw/
 *.log
 *.db

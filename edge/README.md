@@ -60,3 +60,10 @@ $py = "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe"
 - `edge.thermal_twin.load_variant_twins()` reads `config/twin_calibrated_variants.yaml` (simulation only).
 - `PotencyAssessment` now carries `bound_tau_eq_h` (the HIGH bound, the field a signed record would carry), `bound_high_tau_eq_h` (same value), `bound_low_tau_eq_h` (cooling worked fully; NOT a guarantee) and shelf-life equivalents. `python -m edge twin` prints "between A percent (cooling worked fully) and B percent (no cooling) of shelf life used". The high bound integrates the twin with its time constant times `bound_tau_safety_factor`.
 - Signatures and hash chains (Phase 4) protect records after the device signs them; they do not defend against a lie that arrives at the sensor input before signing.
+
+## Phase 4: signed records, hash chain, ledger, runner
+
+- `python -m edge run --recording FILE | --all [--key-dir D] [--ledger-dir D] [--device-id ID]` replays a recording through the real pipeline (potency tracker, tamper monitor, trust assessment) and signs every reading into a hash chain stored in an append-only SQLite ledger (`data/runs/`, git-ignored), signs a final anchor, reads the ledger back, verifies it and prints a short summary.
+- `edge/chain/`: `canonical.py` (integer-only record, schema `pg-record/1`), `crypto.py` (Ed25519, key outside the repo), `chain.py` (`ChainWriter`, `verify_chain`, anchors), `ledger.py`. Exact rules: `docs/01-architecture/signed-record-format.md`.
+- `edge/pi_source.py`: a stub for a real Pi feed; it raises `NotImplementedError` (no hardware is attached).
+- Signatures and the hash chain protect records AFTER they are signed. They do not stop a lie at the sensor before the device signs it. Without an anchor, truncating the tail of a ledger cannot be detected.

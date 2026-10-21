@@ -1,0 +1,262 @@
+{
+ "WARNING": "TEST ONLY. The seed below is public and must never be used for a real device.",
+ "anchor": {
+  "head_hex": "3478020d770f9688419a70781b2536dd261a29099d9d27e47c4a1b5b2d2d7910",
+  "seq": 3,
+  "signature_hex": "d6247b0af20f54e3d117dccfaeb8b3797ae0dc386bee6509f57ab8418b241f3682987502d01cdc2e4c1bef9c88ada53cf19884d0beb3972e4269b25e17ba9604",
+  "statement_utf8": "{\"device_id\":\"pg-test-001\",\"head\":\"3478020d770f9688419a70781b2536dd261a29099d9d27e47c4a1b5b2d2d7910\",\"schema\":\"pg-anchor/1\",\"seq\":3}"
+ },
+ "description": "Vectors for the Phase 4 signed record format; see docs/01-architecture/signed-record-format.md",
+ "device_id": "pg-test-001",
+ "genesis_hash_hex": "abc07be4418acb5b03424f84322accfb3411c5b098d17429ca38770f8f694347",
+ "genesis_prefix": "potencyguard/genesis/v1",
+ "key_id": "9078716701f7d96b",
+ "public_key_hex": "68155b35ed3a93ca8047c992fcc32fbd5e02a32d129ee803719d2817aaff6c42",
+ "records": [
+  {
+   "canonical_hex": "7b22616d6269656e745f63223a3231353030302c22626f756e645f6c6f775f7461755f65715f68223a6e756c6c2c22626f756e645f7461755f65715f68223a6e756c6c2c22636f6f6c696e675f64757479223a302c226465766963655f6964223a2270672d746573742d303031222c22706f74656e6379223a313030303030303030302c227268223a3435323030302c22736368656d61223a2270672d7265636f72642f31222c22736571223a302c227368656c665f6c6966655f757365645f6672616374696f6e223a302c2273686f636b223a3132332c22736f75726365223a2273696d222c22745f6d73223a302c227461755f65715f68223a302c2274656d70223a35303132332c2274727573745f6c6576656c223a2274727573746564222c2276657264696374223a226f6b227d",
+   "canonical_utf8": "{\"ambient_c\":215000,\"bound_low_tau_eq_h\":null,\"bound_tau_eq_h\":null,\"cooling_duty\":0,\"device_id\":\"pg-test-001\",\"potency\":1000000000,\"rh\":452000,\"schema\":\"pg-record/1\",\"seq\":0,\"shelf_life_used_fraction\":0,\"shock\":123,\"source\":\"sim\",\"t_ms\":0,\"tau_eq_h\":0,\"temp\":50123,\"trust_level\":\"trusted\",\"verdict\":\"ok\"}",
+   "hash_hex": "03b64ab73b0cfe9f333fa61e2dfe9f855f59e273eb8593eb101e0c43d88b9541",
+   "inputs": {
+    "ambient_c": 21.5,
+    "bound_low_tau_eq_h": null,
+    "bound_tau_eq_h": null,
+    "cooling_duty": 0.0,
+    "potency": 1.0,
+    "rh_pct": 45.2,
+    "shelf_life_used_fraction": 0.0,
+    "shock_g": 0.0123,
+    "source": "sim",
+    "t_s": 0.0,
+    "tau_eq_h": 0.0,
+    "temp_c": 5.0123,
+    "trust_level": "trusted",
+    "verdict": "ok"
+   },
+   "record": {
+    "ambient_c": 215000,
+    "bound_low_tau_eq_h": null,
+    "bound_tau_eq_h": null,
+    "cooling_duty": 0,
+    "device_id": "pg-test-001",
+    "potency": 1000000000,
+    "rh": 452000,
+    "schema": "pg-record/1",
+    "seq": 0,
+    "shelf_life_used_fraction": 0,
+    "shock": 123,
+    "source": "sim",
+    "t_ms": 0,
+    "tau_eq_h": 0,
+    "temp": 50123,
+    "trust_level": "trusted",
+    "verdict": "ok"
+   },
+   "signature_hex": "ff0d53cac61165a7ff22e7aa091e30d85710144fe6248f7bed1d57518c9e9436baaea46ba4fda31fab5b98d316ce6ade8327244bf7b4589813640a6481a49b01"
+  },
+  {
+   "canonical_hex": "7b22616d6269656e745f63223a3232303030302c22626f756e645f6c6f775f7461755f65715f68223a6e756c6c2c22626f756e645f7461755f65715f68223a6e756c6c2c22636f6f6c696e675f64757479223a353030302c226465766963655f6964223a2270672d746573742d303031222c22706f74656e6379223a3939393939393931322c227268223a3435303030302c22736368656d61223a2270672d7265636f72642f31222c22736571223a312c227368656c665f6c6966655f757365645f6672616374696f6e223a3837392c2273686f636b223a302c22736f75726365223a2273696d222c22745f6d73223a3630303030302c227461755f65715f68223a37373030352c2274656d70223a35303435362c2274727573745f6c6576656c223a2274727573746564222c2276657264696374223a226f6b227d",
+   "canonical_utf8": "{\"ambient_c\":220000,\"bound_low_tau_eq_h\":null,\"bound_tau_eq_h\":null,\"cooling_duty\":5000,\"device_id\":\"pg-test-001\",\"potency\":999999912,\"rh\":450000,\"schema\":\"pg-record/1\",\"seq\":1,\"shelf_life_used_fraction\":879,\"shock\":0,\"source\":\"sim\",\"t_ms\":600000,\"tau_eq_h\":77005,\"temp\":50456,\"trust_level\":\"trusted\",\"verdict\":\"ok\"}",
+   "hash_hex": "bf7eb007013c10c66e47e1a2227eb780da1d1a3dfdea074c5869ad4131d88fa6",
+   "inputs": {
+    "ambient_c": 22.0,
+    "bound_low_tau_eq_h": null,
+    "bound_tau_eq_h": null,
+    "cooling_duty": 0.5,
+    "potency": 0.999999912,
+    "rh_pct": 45.0,
+    "shelf_life_used_fraction": 8.79e-07,
+    "shock_g": 0.0,
+    "source": "sim",
+    "t_s": 600.0,
+    "tau_eq_h": 0.077005,
+    "temp_c": 5.0456,
+    "trust_level": "trusted",
+    "verdict": "ok"
+   },
+   "record": {
+    "ambient_c": 220000,
+    "bound_low_tau_eq_h": null,
+    "bound_tau_eq_h": null,
+    "cooling_duty": 5000,
+    "device_id": "pg-test-001",
+    "potency": 999999912,
+    "rh": 450000,
+    "schema": "pg-record/1",
+    "seq": 1,
+    "shelf_life_used_fraction": 879,
+    "shock": 0,
+    "source": "sim",
+    "t_ms": 600000,
+    "tau_eq_h": 77005,
+    "temp": 50456,
+    "trust_level": "trusted",
+    "verdict": "ok"
+   },
+   "signature_hex": "562dcf6b0298549356b01de6e27f0dd58b068f4ba8ce8092321f9d3c7d6150a0c8e05e2c129e402e860d15f047fec27e66b0432f6ac63d71c6e876e43ef3ac06"
+  },
+  {
+   "canonical_hex": "7b22616d6269656e745f63223a6e756c6c2c22626f756e645f6c6f775f7461755f65715f68223a6e756c6c2c22626f756e645f7461755f65715f68223a6e756c6c2c22636f6f6c696e675f64757479223a6e756c6c2c226465766963655f6964223a2270672d746573742d303031222c22706f74656e6379223a3939393930303030302c227268223a3434383030302c22736368656d61223a2270672d7265636f72642f31222c22736571223a322c227368656c665f6c6966655f757365645f6672616374696f6e223a313233343536382c2273686f636b223a31353030302c22736f75726365223a2273696d222c22745f6d73223a313230303030302c227461755f65715f68223a31303830303030302c2274656d70223a2d353030302c2274727573745f6c6576656c223a226c6f775f636f6e666964656e6365222c2276657264696374223a22746865726d616c5f616e6f6d616c79227d",
+   "canonical_utf8": "{\"ambient_c\":null,\"bound_low_tau_eq_h\":null,\"bound_tau_eq_h\":null,\"cooling_duty\":null,\"device_id\":\"pg-test-001\",\"potency\":999900000,\"rh\":448000,\"schema\":\"pg-record/1\",\"seq\":2,\"shelf_life_used_fraction\":1234568,\"shock\":15000,\"source\":\"sim\",\"t_ms\":1200000,\"tau_eq_h\":10800000,\"temp\":-5000,\"trust_level\":\"low_confidence\",\"verdict\":\"thermal_anomaly\"}",
+   "hash_hex": "95837855f4668f456229b29f07a942953c45cc43c1e7b2d114344383615e09b5",
+   "inputs": {
+    "ambient_c": null,
+    "bound_low_tau_eq_h": null,
+    "bound_tau_eq_h": null,
+    "cooling_duty": null,
+    "potency": 0.9999,
+    "rh_pct": 44.8,
+    "shelf_life_used_fraction": 0.00123456789,
+    "shock_g": 1.5,
+    "source": "sim",
+    "t_s": 1200.0,
+    "tau_eq_h": 10.8,
+    "temp_c": -0.5,
+    "trust_level": "low_confidence",
+    "verdict": "thermal_anomaly"
+   },
+   "record": {
+    "ambient_c": null,
+    "bound_low_tau_eq_h": null,
+    "bound_tau_eq_h": null,
+    "cooling_duty": null,
+    "device_id": "pg-test-001",
+    "potency": 999900000,
+    "rh": 448000,
+    "schema": "pg-record/1",
+    "seq": 2,
+    "shelf_life_used_fraction": 1234568,
+    "shock": 15000,
+    "source": "sim",
+    "t_ms": 1200000,
+    "tau_eq_h": 10800000,
+    "temp": -5000,
+    "trust_level": "low_confidence",
+    "verdict": "thermal_anomaly"
+   },
+   "signature_hex": "48aeacfa741d42620cf2eca996b143c293a6fcc768812d957a5b97a5c0a6efa738f842e2a5fd492f3b8bb43d39a85ea8f6b60d3f6e5f4ceee3a2bdb19e80ef0d"
+  },
+  {
+   "canonical_hex": "7b22616d6269656e745f63223a3330303030302c22626f756e645f6c6f775f7461755f65715f68223a343338313235303030302c22626f756e645f7461755f65715f68223a343430303530303030302c22636f6f6c696e675f64757479223a31303030302c226465766963655f6964223a2270672d746573742d303031222c22706f74656e6379223a3935303030303030302c227268223a3436303030302c22736368656d61223a2270672d7265636f72642f31222c22736571223a332c227368656c665f6c6966655f757365645f6672616374696f6e223a3530303030303030302c2273686f636b223a302c22736f75726365223a2273696d222c22745f6d73223a313830303030302c227461755f65715f68223a343338303132333435362c2274656d70223a3132333435362c2274727573745f6c6576656c223a22756e74727573746564222c2276657264696374223a227375737065637465645f66616c73696669636174696f6e227d",
+   "canonical_utf8": "{\"ambient_c\":300000,\"bound_low_tau_eq_h\":4381250000,\"bound_tau_eq_h\":4400500000,\"cooling_duty\":10000,\"device_id\":\"pg-test-001\",\"potency\":950000000,\"rh\":460000,\"schema\":\"pg-record/1\",\"seq\":3,\"shelf_life_used_fraction\":500000000,\"shock\":0,\"source\":\"sim\",\"t_ms\":1800000,\"tau_eq_h\":4380123456,\"temp\":123456,\"trust_level\":\"untrusted\",\"verdict\":\"suspected_falsification\"}",
+   "hash_hex": "3478020d770f9688419a70781b2536dd261a29099d9d27e47c4a1b5b2d2d7910",
+   "inputs": {
+    "ambient_c": 30.0,
+    "bound_low_tau_eq_h": 4381.25,
+    "bound_tau_eq_h": 4400.5,
+    "cooling_duty": 1.0,
+    "potency": 0.95,
+    "rh_pct": 46.0,
+    "shelf_life_used_fraction": 0.5,
+    "shock_g": 0.0,
+    "source": "sim",
+    "t_s": 1800.0,
+    "tau_eq_h": 4380.123456,
+    "temp_c": 12.3456,
+    "trust_level": "untrusted",
+    "verdict": "suspected_falsification"
+   },
+   "record": {
+    "ambient_c": 300000,
+    "bound_low_tau_eq_h": 4381250000,
+    "bound_tau_eq_h": 4400500000,
+    "cooling_duty": 10000,
+    "device_id": "pg-test-001",
+    "potency": 950000000,
+    "rh": 460000,
+    "schema": "pg-record/1",
+    "seq": 3,
+    "shelf_life_used_fraction": 500000000,
+    "shock": 0,
+    "source": "sim",
+    "t_ms": 1800000,
+    "tau_eq_h": 4380123456,
+    "temp": 123456,
+    "trust_level": "untrusted",
+    "verdict": "suspected_falsification"
+   },
+   "signature_hex": "c981160dede19758314345f98ba7e20137f43157a19035fdc8aaa03aa86ae8835368a22e4cbb026eda73e6fa3e8e28dfb53d85a8a8b2d7833d986b295d63710b"
+  }
+ ],
+ "rounding_cases": [
+  {
+   "expected": 1,
+   "unit": 10000,
+   "value": 5e-05
+  },
+  {
+   "expected": -1,
+   "unit": 10000,
+   "value": -5e-05
+  },
+  {
+   "expected": 0,
+   "unit": 10000,
+   "value": 4e-05
+  },
+  {
+   "expected": 50001,
+   "unit": 10000,
+   "value": 5.00005
+  },
+  {
+   "expected": -50001,
+   "unit": 10000,
+   "value": -5.00005
+  },
+  {
+   "expected": 3000,
+   "unit": 10000,
+   "value": 0.30000000000000004
+  },
+  {
+   "expected": 42265,
+   "unit": 10000,
+   "value": 4.2265
+  },
+  {
+   "expected": 3,
+   "unit": 1000000000,
+   "value": 2.5e-09
+  },
+  {
+   "expected": 1000000000,
+   "unit": 1000000000,
+   "value": 0.9999999995
+  },
+  {
+   "expected": 1,
+   "unit": 1000,
+   "value": 0.0005
+  },
+  {
+   "expected": 600000,
+   "unit": 1000,
+   "value": 600.0
+  },
+  {
+   "expected": 1234568,
+   "unit": 1000000,
+   "value": 1.2345675
+  },
+  {
+   "expected": 0,
+   "unit": 10000,
+   "value": -0.0
+  },
+  {
+   "expected": 0,
+   "unit": 10000,
+   "value": 0
+  }
+ ],
+ "schema": "pg-record/1",
+ "test_only_seed_sha256_hex": "cf19e45abfb9f418426527cf8c6f2a863e56dfdbc3b4d195c2d665e7429eca9f",
+ "test_only_seed_text": "potencyguard TEST ONLY chain vector seed v1",
+ "units": {
+  "e4": 10000,
+  "e6_hours": 1000000,
+  "e9": 1000000000,
+  "t_ms": 1000
+ }
+}

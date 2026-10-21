@@ -1,4 +1,4 @@
-"""Run all project checks: ruff, format check, pytest, and the dashboard build and tests."""
+"""Run all project checks: ruff, format check, pytest, the Phase 4 chain check and the dashboard."""
 
 from __future__ import annotations
 
@@ -28,6 +28,7 @@ def main() -> int:
         ("ruff check", [py, "-m", "ruff", "check", "."], REPO_ROOT),
         ("ruff format --check", [py, "-m", "ruff", "format", "--check", "."], REPO_ROOT),
         ("pytest", [py, "-m", "pytest", "-q"], REPO_ROOT),
+        ("phase 4 chain check", [py, "scripts/check_phase4.py"], REPO_ROOT),
     ]
     npm = shutil.which("npm")
     if (DASHBOARD / "package.json").exists() and (DASHBOARD / "node_modules").exists():

@@ -14,3 +14,7 @@ pydantic_core==2.50.1
 annotated-types==0.8.0
 typing-inspection==0.4.4
 typing_extensions==4.16.0
+# Added in Phase 4: cryptography (Ed25519 signatures) and its mandatory dependencies
+cryptography==50.0.2
+cffi==2.1.1
+pycparser==3.11

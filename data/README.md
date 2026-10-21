@@ -13,3 +13,7 @@ No recording changed: the two new lie modes are used by no shipped scenario, and
 ## Phase 3C
 
 `data/generated/evaluation_3c.json` (git-ignored) is written by `scripts/evaluate_3c.py`. A ground-truth file of a two-node box has an extra series `true_payload_temp_c` (the payload node; `true_temp_c` stays the air node the sensor measures). The nine golden recordings and their ground-truth files do not have it and are unchanged.
+
+## Phase 4
+
+`data/runs/` (git-ignored) holds the ledgers written by `python -m edge run`, one `.sqlite` file per run id plus a `.pubkey` file with the public key (hex). Private keys are never stored in the repo or under `data/`; they live in `%LOCALAPPDATA%\potencyguard\keys\`.

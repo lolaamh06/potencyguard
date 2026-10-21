@@ -22,3 +22,7 @@ Both made by `python scripts/make_test_vectors.py` from the Python reference cod
 - `document_checks` (reference file only): the two worked examples from the team document, as rounded numbers with their precision. These are the only numbers not computed by the code.
 
 All values are computed from synthetic product parameters for an imaginary vaccine.
+
+## chain_vectors.json (Phase 4)
+
+Made by `python scripts/make_chain_vectors.py` with a TEST ONLY key (the seed is public; never use it for a real device). Holds rounding cases, four records with their canonical bytes (hex), Ed25519 signatures, chain hashes, the genesis hash, the public key and a signed anchor, so a TypeScript implementation of `docs/01-architecture/signed-record-format.md` can be checked against it. A test fails if the file differs from a fresh generation. `shared/golden_sha256.json` (one level up) holds the SHA-256 of the 9 golden recordings and the two potency vector files, which Phase 4 did not change.

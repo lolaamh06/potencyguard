@@ -16,3 +16,9 @@
 
 - `python scripts/evaluate_3c.py [--quick] [--workers N]` writes `docs/02-phase-reports/phase-03c-evaluation.md` and `data/generated/evaluation_3c.json`. Independent runs are spread over N worker processes (default half the CPU count); results are put back in a fixed order, so the numbers do not depend on N. `--sf-sweep-only` and `--fa-only` run the bound safety-factor sweep and the CUSUM false-alarm study alone. Seed blocks: final 50001-50200 (mismatch and two-node rows use the first 100), per-box calibration 9101-9110, 9201-9210, 9301-9310, false-alarm study 60001-61000; 20001-20200, 30001-30200 and 40001-40200 are development blocks. `--quick` uses 40001-40005 and never the final block.
 - `python scripts/calibrate_variants.py` fits the three variant twins and writes `config/twin_calibrated_variants.yaml`.
+
+## Phase 4 scripts
+
+- `python scripts/tamper_demo.py LEDGER ACTION [--entry N] [--count N] [--public-key FILE] [--out-dir DIR]` with ACTION one of `edit`, `delete`, `reorder`, `replace-signature`, `resign`, `truncate`, `all`: changes a COPY of a ledger and prints what `verify_chain` reports. Tail truncation without an anchor passes; that is shown, not hidden.
+- `python scripts/make_chain_vectors.py [--check]` writes or checks `shared/test-vectors/chain_vectors.json` (TEST ONLY key).
+- `python scripts/check_phase4.py` is the sixth check in `scripts/run_checks.py`.

@@ -125,6 +125,17 @@ def build_parser() -> argparse.ArgumentParser:
     twin.add_argument("--verbose", action="store_true", help="print every sample")
     twin.add_argument("--recordings-dir", help="folder for --all (default data/recordings)")
 
+    run = sub.add_parser(
+        "run", help="replay a recording through the pipeline into a signed hash-chain ledger"
+    )
+    which_run = run.add_mutually_exclusive_group(required=True)
+    which_run.add_argument("--recording", metavar="FILE", help="one .jsonl recording")
+    which_run.add_argument("--all", action="store_true", help="every recording in the folder")
+    run.add_argument("--recordings-dir", help="folder for --all (default data/recordings)")
+    run.add_argument("--ledger-dir", help="where ledgers are written (default data/runs)")
+    run.add_argument("--key-dir", help="folder of the device key (default outside the repo)")
+    run.add_argument("--device-id", default="pg-sim-001", help="device id (default pg-sim-001)")
+
     pre = sub.add_parser("precheck", help="pre-trip check: does the twin match this box?")
     pre.add_argument("--recording", metavar="FILE", required=True, help="one .jsonl recording")
     pre.add_argument("--hours", type=float, default=6.0, help="hours of data to use (default 6)")
@@ -140,6 +151,8 @@ def main(argv: Sequence[str] | None = None, out=None) -> int:
     cfg = load_product_config()
     if args.command == "precheck":
         return _precheck_command(args, out)
+    if args.command == "run":
+        return _run_command(args, cfg, out)
     if args.command in ("twin", "calibrate"):
         return _twin_commands(args, cfg, out)
     if args.all:
@@ -154,6 +167,38 @@ def main(argv: Sequence[str] | None = None, out=None) -> int:
         _print_one(path, cfg, out, detail=True)
     print(FOOTER, file=out)
     return 0
+
+
+def _run_command(args: argparse.Namespace, cfg: ProductConfig, out) -> int:
+    from edge.chain import load_or_create_signer
+    from edge.runner import run_recording
+    from shared.config import load_box_config
+
+    box = load_box_config()
+    signer = load_or_create_signer(args.key_dir)
+    if args.all:
+        folder = Path(args.recordings_dir) if args.recordings_dir else DEFAULT_RECORDINGS_DIR
+        paths = sorted(folder.glob("*.jsonl"))
+    else:
+        paths = [Path(args.recording)]
+    bad = 0
+    for path in paths:
+        if not path.exists():
+            print(f"recording not found: {path}", file=sys.stderr)
+            return 2
+        try:
+            summary = run_recording(path, cfg, box, signer, args.device_id, args.ledger_dir)
+        except ValueError as exc:
+            print(f"cannot run {path.name}: {exc}", file=sys.stderr)
+            return 2
+        for line in summary.lines():
+            print(line, file=out)
+        bad += not summary.chain.ok
+    print(
+        "Signatures protect records after signing; they do not stop a false sensor input.", file=out
+    )
+    print(FOOTER, file=out)
+    return 1 if bad else 0
 
 
 def _precheck_command(args: argparse.Namespace, out) -> int:
