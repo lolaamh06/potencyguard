@@ -1,0 +1,104 @@
+# Decision planner settings (Phase 5). Simulation only.
+# EVERY number in this file is an illustrative placeholder, not sourced [SOURCE NEEDED].
+# The planner recommends; it never executes. Final authority stays with QA.
+# Design and reasons: docs/03-decisions/decision-0009-decision-planner.md
+
+planner_id: pg-planner-001
+
+# CVaR level (0 <= alpha < 1) and the number of Monte Carlo scenarios per action.
+alpha: 0.95
+n_scenarios: 5000
+# Seed of the scenario generator: a fixed seed gives byte-identical results.
+seed: 20261021
+
+# Loss: L = c_a + V * 1[P_arr < P_min] + beta * Delay(hours)
+V: 50000        # value of goods plus replacement and shortage cost (currency units)
+beta: 200       # price of one hour of delay (currency units per hour)
+
+# Time stepping of the scenario simulation.
+dt_h: 0.5
+max_horizon_h: 120
+
+# Governance thresholds (PROPOSE items P2 in the decision note).
+# Auto-approval needs: value at risk (at alpha) of the chosen action below v_thr, AND the gap
+# between its CVaR and its expected loss below confidence_gap_thr, AND a clean tamper audit.
+v_thr: 20000
+confidence_gap_thr: 10000
+
+# While the monitor's current verdict is thermal_anomaly (a cooling shortfall or an open door), the
+# actions that keep the shipment in the same box (continue, expedite, reroute_to_depot) assume the
+# cooling is ALREADY off with this probability, instead of the small per-action failure chance
+# (PROPOSE P5 in the decision note). 0 switches this off.
+anomaly_cooling_fail_probability: 0.8
+
+# Ambient forecast model: mean-reverting random walk from the current ambient temperature.
+ambient:
+  # persistence: the route ambient wanders around the CURRENT measured ambient (a persistence
+  # forecast, PROPOSE P6); fixed: it reverts to route_mean_c.
+  route_mean_mode: persistence
+  route_mean_c: 22.0
+  route_theta_per_h: 0.15
+  route_sigma_c: 1.5
+  depot_mean_c: 18.0
+  depot_theta_per_h: 0.3
+  depot_sigma_c: 0.5
+  heatwave_probability: 0.15
+  heatwave_offset_c: 8.0
+  heatwave_duration_h: 6.0
+
+# Actions. Remaining time = time_factor * R + time_offset_h, where R = scheduled remaining hours,
+# plus a sampled delay max(0, Normal(delay_mean_h, delay_sd_h)). Delay in the loss =
+# extra_delay_h + max(0, time - R). cooling_fail_probability: chance that the cooling unit fails
+# during the horizon (failure time uniform in the horizon). fresh_start: a NEW shipment replaces
+# this one (tau_eq 0, at the set point). ambient_mode: route or depot.
+actions:
+  continue:
+    cost: 0
+    time_factor: 1.0
+    time_offset_h: 0.0
+    delay_mean_h: 1.0
+    delay_sd_h: 2.0
+    extra_delay_h: 0.0
+    cooling_fail_probability: 0.05
+    ambient_mode: route
+    fresh_start: false
+  expedite:
+    cost: 3000
+    time_factor: 0.75
+    time_offset_h: 0.0
+    delay_mean_h: 0.5
+    delay_sd_h: 1.0
+    extra_delay_h: 0.0
+    cooling_fail_probability: 0.05
+    ambient_mode: route
+    fresh_start: false
+  reroute_to_depot:
+    cost: 5000
+    time_factor: 0.35
+    time_offset_h: 0.0
+    delay_mean_h: 0.5
+    delay_sd_h: 1.0
+    extra_delay_h: 12.0
+    cooling_fail_probability: 0.02
+    ambient_mode: route
+    fresh_start: false
+  re_source:
+    cost: 30000
+    time_factor: 0.0
+    time_offset_h: 36.0
+    delay_mean_h: 6.0
+    delay_sd_h: 6.0
+    extra_delay_h: 24.0
+    cooling_fail_probability: 0.03
+    ambient_mode: route
+    fresh_start: true
+  quarantine:
+    cost: 2000
+    time_factor: 0.0
+    time_offset_h: 24.0
+    delay_mean_h: 0.0
+    delay_sd_h: 0.0
+    extra_delay_h: 48.0
+    cooling_fail_probability: 0.01
+    ambient_mode: depot
+    fresh_start: false

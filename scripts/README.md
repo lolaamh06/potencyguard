@@ -22,3 +22,8 @@
 - `python scripts/tamper_demo.py LEDGER ACTION [--entry N] [--count N] [--public-key FILE] [--out-dir DIR]` with ACTION one of `edit`, `delete`, `reorder`, `replace-signature`, `resign`, `truncate`, `all`: changes a COPY of a ledger and prints what `verify_chain` reports. Tail truncation without an anchor passes; that is shown, not hidden.
 - `python scripts/make_chain_vectors.py [--check]` writes or checks `shared/test-vectors/chain_vectors.json` (TEST ONLY key).
 - `python scripts/check_phase4.py` is the sixth check in `scripts/run_checks.py`.
+
+## Phase 5 scripts
+
+- `python scripts/evaluate_planner.py` writes `docs/02-phase-reports/phase-05-evaluation.md`: the oracle, the six demo scenarios, the effect of two modelling fixes, a V and beta sensitivity table and seed stability. Illustrative placeholders; not validated against real decisions.
+- `python scripts/check_phase5.py` is the seventh check in `scripts/run_checks.py` (oracle exact, same seed same numbers, untrusted never auto-approved, the decision log verifies and an edited copy is detected).

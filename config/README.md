@@ -25,3 +25,7 @@
 - `box_model` (`single_node` or `two_node`), `two_node_payload_fraction`, `two_node_coupling_tau_h` in `product_default.yaml` (placeholders; optional, defaults single_node, 0.5, 1.5).
 - `bound_tau_safety_factor` in `detectors.yaml`: the high worst-case bound integrates the twin with its time constant times this factor (0 < sf <= 1). Chosen on the training seeds as the largest value in {1.0, 0.9, 0.8, 0.7, 0.6} with zero violations on the nominal, +15 and -15 percent boxes: 0.9.
 - `twin_calibrated_variants.yaml`: twins fitted from per-box calibration sets (simulation only, seeds listed in the file). Regenerate with `python scripts/calibrate_variants.py`. `twin_calibrated.yaml` is not touched.
+
+## Phase 5: planner.yaml
+
+Settings of the decision planner (`python -m planner`): CVaR level, number of scenarios, seed, V and beta, per-action cost, time, delay and cooling-failure assumptions, the ambient forecast model, `anomaly_cooling_fail_probability`, and the governance thresholds `v_thr` and `confidence_gap_thr`. Every number is an illustrative placeholder, not sourced [SOURCE NEEDED]; the thresholds are PROPOSE items awaiting a decision.
