@@ -1,0 +1,40 @@
+# Simulation only, fitted from per-box calibration sets. Not real-world evidence.
+# placeholder, not sourced [SOURCE NEEDED]: these numbers describe synthetic boxes.
+# Each variant is fitted by the same restricted regression as the nominal twin, from
+# clean calibration runs generated for THAT box.
+# Regenerate with: python scripts/calibrate_variants.py
+fit_date: 2026-10-21
+variants:
+  plus15:
+    description: tau, R_th and capacity +15%
+    calibration_seeds: [9101, 9102, 9103, 9104, 9105, 9106, 9107, 9108, 9109, 9110]
+    n_intervals: 2880
+    tau_h: 6.861594226387048
+    dT_cool_c: 39.532090203694274
+    sigma_r_c: 0.06880819749128628
+    r_squared: 0.9252265165078122
+    condition_number: 1.3909937424545096
+    fit_intercept_d: -0.0016471683762294687
+    unrestricted_b_minus_expected: -0.0757344070849508
+  minus15:
+    description: tau, R_th and capacity -15%
+    calibration_seeds: [9201, 9202, 9203, 9204, 9205, 9206, 9207, 9208, 9209, 9210]
+    n_intervals: 2880
+    tau_h: 5.09806965052877
+    dT_cool_c: 21.586785503079113
+    sigma_r_c: 0.06941487288943766
+    r_squared: 0.9968366782336695
+    condition_number: 1.61520285070807
+    fit_intercept_d: -0.0023712194760930894
+    unrestricted_b_minus_expected: -0.0015734624872779518
+  two_node:
+    description: two-node box (air and payload nodes)
+    calibration_seeds: [9301, 9302, 9303, 9304, 9305, 9306, 9307, 9308, 9309, 9310]
+    n_intervals: 2880
+    tau_h: 2.0182864917730066
+    dT_cool_c: 30.147138637813885
+    sigma_r_c: 0.07301312009003605
+    r_squared: 0.9459375618976625
+    condition_number: 2.280479138638743
+    fit_intercept_d: 0.007282221862813465
+    unrestricted_b_minus_expected: -0.04030593210374135

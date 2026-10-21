@@ -52,3 +52,11 @@ $py = "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe"
 ```
 
 `twin --recording` now prints a Trust block: whether the data are trusted, whether the twin is in date, and, when they are not trusted, the reported shelf life used next to "worst case from hour t0: at most X percent of shelf life used". `twin --all` adds a trust column. The bound is deliberately pessimistic: it assumes the cooling unit did nothing after t0, so it can be far above the true value when the cooling in fact worked.
+
+## Phase 3C: per-box twins, the pre-trip check and the bound interval
+
+- `python -m edge precheck --recording FILE [--hours H]` feeds the first H hours (default 6, placeholder) through the rolling gain estimate and prints either "twin matches this box (gain g, band ...)", "twin may be out of date: recalibrate before departure (gain g)", or that the gain could not be measured (which is NOT a confirmation). Library: `edge.precheck.precheck(readings, twin, config) -> PrecheckResult`.
+- Operating procedure: calibrate the twin once per box type at commissioning from a clean run, run the pre-trip check before each trip, recalibrate when it says so. The twin must be calibrated to the box it is used with.
+- `edge.thermal_twin.load_variant_twins()` reads `config/twin_calibrated_variants.yaml` (simulation only).
+- `PotencyAssessment` now carries `bound_tau_eq_h` (the HIGH bound, the field a signed record would carry), `bound_high_tau_eq_h` (same value), `bound_low_tau_eq_h` (cooling worked fully; NOT a guarantee) and shelf-life equivalents. `python -m edge twin` prints "between A percent (cooling worked fully) and B percent (no cooling) of shelf life used". The high bound integrates the twin with its time constant times `bound_tau_safety_factor`.
+- Signatures and hash chains (Phase 4) protect records after the device signs them; they do not defend against a lie that arrives at the sensor input before signing.

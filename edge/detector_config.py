@@ -35,6 +35,8 @@ class DetectorConfig(BaseModel):
     ood_sustained_samples: int = Field(ge=1)
     ood_max_gain_se: float = Field(gt=0, allow_inf_nan=False)
     trust_lookback_samples: int = Field(ge=0)
+    # Phase 3C: the high bound integrates the twin with its time constant times this factor.
+    bound_tau_safety_factor: float = Field(gt=0, le=1, allow_inf_nan=False)
 
 
 def load_detector_config(path: Path | str | None = None) -> DetectorConfig:

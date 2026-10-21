@@ -51,7 +51,7 @@ The ambient and cooling-duty channels stay honest in both modes (the Phase 3 thr
 
 - **Shared equations.** The twin and the simulator use the same family of equations, so every number is optimistic for a real box; the mismatch runs only partly compensate.
 - **Honest channels.** Ambient and duty are assumed honest. A lie on them is out of scope.
-- **The mimic liar.** Physics cannot see it by construction. Covering it needs something that is not physics: signed hardware readings, a redundant independent sensor, or product signatures.
+- **The mimic liar.** Physics cannot see it by construction. Covering it needs something that is not physics: attested sensors, a second independent sensor, or out-of-band data (for example GPS and carrier records). Signatures and hash chains do NOT cover it (see the wording correction in the Phase 3C addendum below).
 - **No humidity or shock physics.** Those channels are not modelled.
 - **Hard proofs under mismatch.** On a +15 percent box the impossible-state proof fires falsely (the real box has more cooling than the twin believes) and the prompt forbids suppressing it.
 - **Slow lies behind a fault.** A drift of 1 K per hour or less is not detected while a cooling fault is active: the fault's own residual hides it.
@@ -64,7 +64,7 @@ The ambient and cooling-duty channels stay honest in both modes (the Phase 3 thr
 
 - **Mismatch.** The twin must be calibrated to the box it is used with. On a box whose time constant, wall resistance and cooling capacity are 15 percent above the calibration, 132 of 700 clean and physical runs (19 percent) still end with a tamper verdict (100 heatwave_transit from the hard impossible-state proof, 31 freeze_event and 1 baseline from the negative CUSUM); on a box 15 percent below, 0 of 700. We did not weaken the hard proofs to hide this, and the 5 percent target for the +15 percent box is MISSED. Operationally: calibrate per box type, re-check at commissioning, and treat these verdicts as operator-review flags.
 - **Drift behind a cooling fault.** Drifts of 0.25, 0.5 and 1 K per hour are missed (0 percent detected, 200 runs each) while a cooling fault is active, because the fault's own residual hides them; 2 K per hour is detected in 100 percent with a median delay of 590 minutes. A fault-aware model is future work. Accepted and documented.
-- **Mimic liar.** Detected in 0 percent of runs, by construction: physics cannot see a reading that follows a healthy box. It is covered only by signatures, attested hardware or a redundant sensor.
+- **Mimic liar.** Detected in 0 percent of runs, by construction: physics cannot see a reading that follows a healthy box. It is covered only by attested sensors, a second independent sensor, or out-of-band data (see the Phase 3C addendum below).
 - **The bound** is for safety decisions only, never an estimate (section 4 gives the ratios). It holds on the nominal box and the +15 percent box in these runs and not on every -15 percent run.
 - **Shared equations, honest channels, no humidity or shock physics** (section 6) all still apply.
 
@@ -75,9 +75,15 @@ Can say (each tied to a number in docs/02-phase-reports/phase-03b-evaluation.md;
 2. Slow drifts of 0.25 to 2 K per hour on a healthy box are detected in 100 percent of 200 runs each.
 3. When the data are untrusted, a worst-case bound on the damage is given; it was never below the true damage in 200 fresh runs of any family on the nominal box.
 4. The bound is far above the truth where the cooling really worked (median about 18 times) and close to it where the cooling failed (1.15 to 1.35 times).
-5. The self-check removed false tamper verdicts on a box 15 percent below the calibration (0 of 700 runs end with one) and cut them from 531 to 132 of 700 on a box 15 percent above.
+5. On a box 15 percent below the calibration no run ends with a tamper verdict (0 of 700, before and after the self-check; 100 of 700 still had one at some point, all freeze_event, because the CUSUM alarms before the slow self-check can speak). On a box 15 percent above, the runs that END with a tamper verdict fell from 531 to 132 of 700 (any tamper verdict at some point: 700 of 700, before and after).
 6. A box that does not match the twin is reported as low confidence with an operator-review message, not as a proven lie.
 7. The false-alarm figures on the nominal box did not get worse (1 clean or physical run with a tamper verdict, as before).
 8. The limits are measured and listed: the mimic (0 percent), drift behind a cooling fault at 1 K per hour or less (0 percent), the +15 percent box (19 percent still end with a tamper verdict).
 
 Must NOT say: that the mimic liar is caught; that a mismatched box is handled; that slow lies are caught in every situation; that the worst-case bound is an estimate of the damage; that the bound is valid on every box; that these results describe real boxes, real sensors or real shipments; that any threshold has been sourced.
+
+## 10. Addendum (Phase 3C): wording correction
+
+Signatures and hash chains (Phase 4) protect the records AFTER the device signs them and stop impersonation by anyone without the key. They do NOT defend against an attacker who controls the sensor input before the device signs it: the device would sign the lie. A sensor-level mimic liar is covered only by attested sensors, a second independent sensor, or out-of-band data (for example GPS and carrier records). Two limits are not fixable in software: a drift that stays inside the cooling-partly-works envelope, and the mimic.
+
+Two earlier statements were also corrected: (1) text that named "signatures" as a cover for the mimic liar, and the Phase 3B report's suggestion that Phase 4 "actually covers the mimic liar"; (2) the statement that the self-check "removed" false tamper verdicts on a box 15 percent below the calibration: 100 of 700 runs had a tamper verdict at some time in Phase 3 (all freeze_event) and still have it in Phase 3B (the CUSUM alarms before the slow self-check can speak); what the self-check changed is that none ends with one (0 of 700, before and after), and on the box 15 percent above the runs that END with one fell from 531 to 132 of 700. Phase 3C then reduced the any-time figure with per-box calibration: see decision 0006b. The shared-equations limit is now "tested against one structurally different box model of my own design; still simulation" (decision 0006b, section 3).

@@ -32,6 +32,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from shared.config import REPO_ROOT, ConfigError
 
 DEFAULT_TWIN_PATH = REPO_ROOT / "config" / "twin_calibrated.yaml"
+VARIANT_TWIN_PATH = REPO_ROOT / "config" / "twin_calibrated_variants.yaml"
 
 
 class TwinParams(BaseModel):
@@ -144,3 +145,24 @@ def load_twin_params(path: Path | str | None = None) -> TwinParams:
         )
     except (OSError, yaml.YAMLError, KeyError, TypeError, ValueError) as exc:
         raise ConfigError(f"cannot load twin parameters from {file}: {exc}") from exc
+
+
+def load_variant_twins(path: Path | str | None = None) -> dict[str, TwinParams]:
+    """The per-box fitted twins in config/twin_calibrated_variants.yaml (Phase 3C)."""
+    target = Path(path) if path is not None else VARIANT_TWIN_PATH
+    try:
+        raw = yaml.safe_load(target.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise ConfigError(f"cannot read {target}: {exc}") from exc
+    variants = raw.get("variants") if isinstance(raw, dict) else None
+    if not isinstance(variants, dict) or not variants:
+        raise ConfigError(f"{target} has no 'variants' section")
+    out = {}
+    for name, block in variants.items():
+        try:
+            out[name] = TwinParams(
+                tau_h=block["tau_h"], dT_cool_c=block["dT_cool_c"], sigma_r_c=block["sigma_r_c"]
+            )
+        except (KeyError, ValueError) as exc:
+            raise ConfigError(f"variant {name!r} in {target} is invalid: {exc}") from exc
+    return out

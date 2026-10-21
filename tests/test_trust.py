@@ -440,7 +440,13 @@ def test_the_streaming_bound_equals_the_batch_bound(product):
     taus = [tracker.update(r).tau_eq_h for r in readings]
     index = round(bound.t0_s / DT)
     batch = worst_case_bound(
-        readings, bound.t0_s, taus[index], product, PARAMS, CONFIG.heat_allowance_c
+        readings,
+        bound.t0_s,
+        taus[index],
+        product,
+        PARAMS,
+        CONFIG.heat_allowance_c,
+        CONFIG.bound_tau_safety_factor,
     )
     assert batch == bound
 

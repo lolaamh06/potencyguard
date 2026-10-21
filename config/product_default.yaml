@@ -163,3 +163,21 @@ detect_divergence_c: 1.0
 # stays at or below it (the largest is 120 W). The step detector's heat_allowance_c in
 # config/detectors.yaml is derived from it: heat_allowance_c = box_R_th_k_per_w * door_max_power_w.
 door_max_power_w: 120
+
+# ---------------------------------------------------------------------------
+# Box physics (Phase 3C). Every value below is
+# placeholder, not sourced [SOURCE NEEDED].
+# ---------------------------------------------------------------------------
+
+# single_node: one lumped temperature (the default; all earlier results use it).
+# two_node: an air node (what the sensor measures) and a payload node (what the potency
+# depends on), coupled by a resistance. See docs/03-decisions/decision-0006b-closing-more-limitations.md.
+box_model: single_node
+
+# two_node only: share of the total heat capacity that sits in the payload (0 gives the single node).
+two_node_payload_fraction: 0.5
+
+# two_node only: time constant, in hours, with which air and payload equalise if the wall were
+# perfectly insulating. The wall resistance and total capacity are then chosen so that the slow
+# time constant of the whole box equals box_tau_h.
+two_node_coupling_tau_h: 1.5

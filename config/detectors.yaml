@@ -69,3 +69,13 @@ ood_max_gain_se: 0.04
 # When the monitor declares the reported data untrusted, the worst-case bound starts this many
 # samples before the first evidence, so a lie that began before it was noticed is covered.
 trust_lookback_samples: 6
+
+# Phase 3C: safety factor sf on the twin's time constant in the HIGH worst-case bound (0 < sf <= 1).
+# The bound integrates the twin with tau * sf: a box that tracks the ambient faster is at an
+# equal or higher temperature, so a smaller sf can only make the bound higher (safer, looser).
+# Rule (chosen on the TRAINING seeds): the largest sf in {1.0, 0.9, 0.8, 0.7, 0.6} with zero
+# violations in every lie family on the nominal box and the +15 and -15 percent boxes.
+# placeholder, not sourced [SOURCE NEEDED]
+# Chosen on the training seeds 10001-10100 (sweep in docs/02-phase-reports/phase-03c-evaluation.md):
+# 1.0 gave 66 violations on the -15 percent box; 0.9 is the largest factor with none.
+bound_tau_safety_factor: 0.9

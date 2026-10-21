@@ -36,7 +36,12 @@ import numpy as np
 
 from edge.sensor_reading import TEMP_MAX_C, TEMP_MIN_C, SensorReading
 from shared.config import BoxConfig
-from simulator.box_model import decay_factor, steady_state_temp_c, step_with_decay
+from simulator.box_model import (
+    decay_factor,
+    steady_state_temp_c,
+    step_with_decay,
+    two_node_for,
+)
 from simulator.events import (
     KIND_AMBIENT,
     KIND_COOLING,
@@ -84,6 +89,14 @@ class BoxEngine:
         self._decay = decay_factor(self._dt_s, box.box_tau_h * 3600.0)
         self._half_band = box.box_deadband_c / 2.0
         self.true_temp_c = box.box_setpoint_c
+        # Phase 3C: the two-node box has a payload node; true_temp_c stays the air node.
+        two = two_node_for(box)
+        self._two = None
+        self.payload_temp_c: float | None = None
+        if two is not None and two.c_payload > 0.0:
+            e = two.transition(self._dt_s)
+            self._two = (float(e[0, 0]), float(e[0, 1]), float(e[1, 0]), float(e[1, 1]))
+            self.payload_temp_c = box.box_setpoint_c
         self.compressor_on = self.true_temp_c > box.box_setpoint_c + self._half_band
         self.n = 0
         self.reported_history: list[float] = []
@@ -141,7 +154,13 @@ class BoxEngine:
             t_inf = steady_state_temp_c(
                 self._ambient_fn(t_s) + offset_c, box.box_R_th_k_per_w, heat_w + cooling_w
             )
-            self.true_temp_c = step_with_decay(self.true_temp_c, t_inf, self._decay)
+            if self._two is None:
+                self.true_temp_c = step_with_decay(self.true_temp_c, t_inf, self._decay)
+            else:
+                e00, e01, e10, e11 = self._two
+                da, dp = self.true_temp_c - t_inf, self.payload_temp_c - t_inf
+                self.true_temp_c = t_inf + e00 * da + e01 * dp
+                self.payload_temp_c = t_inf + e10 * da + e11 * dp
         self._last_duty = on_substeps / self._n_sub
 
     def _mimic_c(self, spoof: EventRecord, t_s: float, true_c: float) -> float:
@@ -247,6 +266,7 @@ class BoxEngine:
             rh_pct=reading.rh_pct,
             cooling_duty=reading.cooling_duty,
             measured_ambient_c=reading.ambient_c,
+            true_payload_temp_c=None if self.payload_temp_c is None else _r(self.payload_temp_c),
         )
         self.reported_history.append(reading.temp_c)
         self.n += 1

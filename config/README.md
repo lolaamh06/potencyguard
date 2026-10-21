@@ -19,3 +19,9 @@
 
 - `product_default.yaml`: `door_max_power_w` (120 W): the largest door power the injectable `open_door` command accepts and the largest any shipped scenario uses. Placeholder, not sourced [SOURCE NEEDED].
 - `detectors.yaml`: `heat_allowance_c` now documents its meaning (the largest sudden warming of the box that an unseen heat load can cause in one sample interval) and its derivation (`box_R_th_k_per_w * door_max_power_w` = 60 K; a test keeps the value between 1 and 1.5 times that). New keys `ood_window_samples`, `ood_gain_margin`, `ood_gain_band_low`, `ood_gain_band_high`, `ood_sustained_samples`, `ood_max_gain_se` (the twin-out-of-date self-check, tuned on the training seeds only, see `docs/02-phase-reports/phase-03b-evaluation.md`) and `trust_lookback_samples` (how far before the first evidence the worst-case bound starts). All are placeholders, not sourced [SOURCE NEEDED].
+
+## Phase 3C keys and files
+
+- `box_model` (`single_node` or `two_node`), `two_node_payload_fraction`, `two_node_coupling_tau_h` in `product_default.yaml` (placeholders; optional, defaults single_node, 0.5, 1.5).
+- `bound_tau_safety_factor` in `detectors.yaml`: the high worst-case bound integrates the twin with its time constant times this factor (0 < sf <= 1). Chosen on the training seeds as the largest value in {1.0, 0.9, 0.8, 0.7, 0.6} with zero violations on the nominal, +15 and -15 percent boxes: 0.9.
+- `twin_calibrated_variants.yaml`: twins fitted from per-box calibration sets (simulation only, seeds listed in the file). Regenerate with `python scripts/calibrate_variants.py`. `twin_calibrated.yaml` is not touched.

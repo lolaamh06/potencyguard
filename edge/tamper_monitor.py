@@ -147,6 +147,8 @@ class MonitorState(BaseModel):
     untrusted_since_s: float | None = None
     untrusted_reason: str | None = None
     trust_level: str = TRUSTED
+    # Phase 3C: True when this sample did not feed the CUSUM (it belongs to an undecided jump).
+    cusum_skipped: bool = False
 
 
 @dataclass
@@ -371,6 +373,7 @@ class TamperMonitor:
             untrusted_since_s=self._untrusted_since_s,
             untrusted_reason=self._untrusted_reason,
             trust_level=self.trust_level,
+            cusum_skipped=skip_cusum,
         )
         self._prev = reading
         self._last = state

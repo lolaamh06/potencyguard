@@ -125,6 +125,10 @@ def build_parser() -> argparse.ArgumentParser:
     twin.add_argument("--verbose", action="store_true", help="print every sample")
     twin.add_argument("--recordings-dir", help="folder for --all (default data/recordings)")
 
+    pre = sub.add_parser("precheck", help="pre-trip check: does the twin match this box?")
+    pre.add_argument("--recording", metavar="FILE", required=True, help="one .jsonl recording")
+    pre.add_argument("--hours", type=float, default=6.0, help="hours of data to use (default 6)")
+
     cal = sub.add_parser("calibrate", help="fit the twin from data/calibration/")
     cal.add_argument("--calibration-dir", help="folder (default data/calibration)")
     return parser
@@ -134,6 +138,8 @@ def main(argv: Sequence[str] | None = None, out=None) -> int:
     out = out or sys.stdout
     args = build_parser().parse_args(argv)
     cfg = load_product_config()
+    if args.command == "precheck":
+        return _precheck_command(args, out)
     if args.command in ("twin", "calibrate"):
         return _twin_commands(args, cfg, out)
     if args.all:
@@ -146,6 +152,37 @@ def main(argv: Sequence[str] | None = None, out=None) -> int:
             print(f"recording not found: {path}", file=sys.stderr)
             return 2
         _print_one(path, cfg, out, detail=True)
+    print(FOOTER, file=out)
+    return 0
+
+
+def _precheck_command(args: argparse.Namespace, out) -> int:
+    from edge.detector_config import load_detector_config
+    from edge.precheck import precheck, window
+    from edge.thermal_twin import load_twin_params
+
+    path = Path(args.recording)
+    if not path.exists():
+        print(f"recording not found: {path}", file=sys.stderr)
+        return 2
+    source = RecordedSource(path)
+    source.start()
+    readings = []
+    try:
+        while (reading := source.read()) is not None:
+            readings.append(reading)
+    finally:
+        source.close()
+    try:
+        result = precheck(window(readings, args.hours), load_twin_params(), load_detector_config())
+    except ValueError as exc:
+        print(f"cannot check {path.name}: {exc}", file=sys.stderr)
+        return 2
+    print(
+        f"Pre-trip check of {path.name} (first {args.hours:g} hours, {result.n_pairs} intervals):",
+        file=out,
+    )
+    print(f"  {result.message}", file=out)
     print(FOOTER, file=out)
     return 0
 

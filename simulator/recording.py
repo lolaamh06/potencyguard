@@ -68,6 +68,8 @@ def recording_text(result: RunResult) -> tuple[str, str]:
         "resolved_parameters": None if result.resolved is None else result.resolved.parameters(),
         "events": events,
     }
+    if any(s.true_payload_temp_c is not None for s in result.truth):
+        truth["true_payload_temp_c"] = [s.true_payload_temp_c for s in result.truth]
     return "\n".join(lines) + "\n", _dumps(truth) + "\n"
 
 

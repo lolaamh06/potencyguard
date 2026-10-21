@@ -11,7 +11,10 @@ Seed blocks (disjoint; asserted below and in the tests):
   development 20001 to 20200   scored once in Phase 3B; its seed 20090 exposed a bound violation,
                                so it was used for DIAGNOSIS and is no longer a final block
   validity    30001 to 30200   used to validate the first bound-start repair: development as well
-  final       40001 to 40200   final scoring of the bound-start fix; no tuning, no diagnosis
+  final       40001 to 40200   final scoring of the Phase 3B fix; second development block from
+                               Phase 3C on
+  Phase 3C: per-box calibration 9101-9110, 9201-9210, 9301-9310; final 50001 to 50200; false-alarm
+  study 60001 to 61000 (SEED_LEDGER_3C below)
 
 Everything is a simulation result on a synthetic box. The twin and the simulator use the same
 family of equations, so the final scoring is repeated against boxes that differ from the
@@ -88,6 +91,66 @@ SEED_LEDGER = (
         "final scoring, used once",
     ),
 )
+# Phase 3C blocks (nothing above is touched; 40001-40200 is now a second development block).
+FINAL3C_SEEDS = list(range(50001, 50201))
+FALSE_ALARM_SEEDS = list(range(60001, 61001))
+SEED_LEDGER_3C = (
+    ("calibration", "9001 to 9010", "fit the nominal twin", "calibration only"),
+    (
+        "per-box calibration, +15% box",
+        "9101 to 9110",
+        "fit the twin of the +15% box",
+        "calibration only",
+    ),
+    (
+        "per-box calibration, -15% box",
+        "9201 to 9210",
+        "fit the twin of the -15% box",
+        "calibration only",
+    ),
+    (
+        "per-box calibration, two-node box",
+        "9301 to 9310",
+        "fit the single-node twin to the two-node box",
+        "calibration only",
+    ),
+    (
+        "training",
+        "10001 to 10100",
+        "CUSUM and out-of-date settings (3B); bound safety factor (3C)",
+        "tuning",
+    ),
+    (
+        "development",
+        "20001 to 20200",
+        "3B first scoring; diagnosis of the bound violation",
+        "used (development)",
+    ),
+    (
+        "validity (development)",
+        "30001 to 30200",
+        "validated the first bound repair",
+        "used (development)",
+    ),
+    (
+        "second development",
+        "40001 to 40200",
+        "3B fix final scoring; now development for anything touched in 3C",
+        "used (development)",
+    ),
+    (
+        "final (3C)",
+        "50001 to 50200",
+        "all Phase 3C final numbers; mismatch and two-node runs use the first 100",
+        "final scoring, each seed scored once, no tuning",
+    ),
+    (
+        "false-alarm study",
+        "60001 to 61000",
+        "clean runs only: CUSUM false alarms for k and h",
+        "tuning allowed",
+    ),
+)
 QUICK_COUNT = 5
 MISMATCH_SWEEP_SEEDS = 30  # training seeds used for the informational mismatch columns of the sweep
 MISMATCH_COUNT = 100  # seeds per family in the mismatch runs (the first ones of the test block)
@@ -101,7 +164,18 @@ OOD_FALSE_TARGET = 0.02  # largest share of nominal-box clean and physical runs 
 OOD_LIE_LOSS_TARGET = 0.01  # largest drop in any nominal lie family's detection rate
 DRIFT_RATES = (0.25, 0.5, 1.0, 2.0)
 assert not set(CALIBRATION_SEEDS) & set(TRAIN_SEEDS)
-_BLOCKS = [CALIBRATION_SEEDS, TRAIN_SEEDS, DEVELOPMENT_SEEDS, VALIDITY_DEV_SEEDS, FINAL_SEEDS]
+from simulator.calibration_set import VARIANT_SEEDS  # noqa: E402
+
+_BLOCKS = [
+    CALIBRATION_SEEDS,
+    TRAIN_SEEDS,
+    DEVELOPMENT_SEEDS,
+    VALIDITY_DEV_SEEDS,
+    FINAL_SEEDS,
+    *VARIANT_SEEDS.values(),
+    FINAL3C_SEEDS,
+    FALSE_ALARM_SEEDS,
+]
 assert sum(len(set(b)) for b in _BLOCKS) == len(set().union(*map(set, _BLOCKS)))
 
 DETECTORS = ("cusum_pos", "cusum_neg", "impossible_step", "impossible_state", "flat_line")
@@ -334,12 +408,17 @@ def _product() -> ProductConfig:
 # ----------------------------------------------------------------------------- scoring one run
 
 
+def _damage_temp_c(sample: TruthSample) -> float:
+    """The temperature the product really sits at: the payload node of a two-node box, else the box."""
+    return sample.true_temp_c if sample.true_payload_temp_c is None else sample.true_payload_temp_c
+
+
 def _true_tau_eq_h(run: RunData, t0_s: float, product: ProductConfig) -> float:
     """tau_eq of the TRUE temperatures after t0 (scoring only; the monitor never sees truth)."""
     dt_h = run.interval_s / 3600.0
     index = round(t0_s / run.interval_s)
     return sum(
-        arrhenius_acceleration_factor(sample.true_temp_c, product) * dt_h
+        arrhenius_acceleration_factor(_damage_temp_c(sample), product) * dt_h
         for sample in run.truth[index + 1 :]
     )
 
@@ -363,7 +442,7 @@ def score_run(
     previous = "ok"
     state = None
     for reading in run.readings:
-        _, _, state = assessor.update(reading)
+        _, potency_state, state = assessor.update(reading)
         if ref_s is not None and state.t_s >= ref_s:
             for name, attr in FLAG_OF.items():
                 if first_after[name] is None and getattr(state, attr):
@@ -388,17 +467,29 @@ def score_run(
         "true_tau_h": None,
         "bound_ratio": None,
         "bound_start_before_divergence_s": None,
+        "bound_low_tau_h": None,
+        "low_valid": None,
     }
     if bound is not None:
         true_tau = _true_tau_eq_h(run, bound.t0_s, product)
         trust["bound_tau_h"] = bound.tau_eq_from_t0_h
         trust["true_tau_h"] = true_tau
         trust["bound_valid"] = bound.tau_eq_from_t0_h >= true_tau - 1e-9
+        trust["bound_low_tau_h"] = bound.tau_eq_low_from_t0_h
+        trust["low_valid"] = bound.tau_eq_low_from_t0_h <= true_tau + 1e-9
         trust["bound_ratio"] = bound.tau_eq_from_t0_h / true_tau if true_tau > 0 else None
         if run.divergence_s is not None:
             trust["bound_start_before_divergence_s"] = run.divergence_s - bound.t0_s
+    dt_h = run.interval_s / 3600.0
+    true_total = sum(
+        arrhenius_acceleration_factor(_damage_temp_c(sample), product) * dt_h
+        for sample in run.truth[1:]
+    )
     return {
         **trust,
+        "interval_s": run.interval_s,
+        "reported_tau_eq_h": potency_state.tau_eq_h,
+        "true_tau_eq_total_h": true_total,
         "final_verdict": previous,
         "final_ood": previous == OUT_OF_DATE,
         "any_ood": OUT_OF_DATE in anywhere,
@@ -461,6 +552,13 @@ def evaluate_family(
         run = family.make(seed, box)
         interval_s = run.interval_s
         rows.append(score_run(run, family, monitor))
+    return summarise_rows(family, seeds, rows, interval_s)
+
+
+def summarise_rows(
+    family: Family, seeds: Sequence[int], rows: list[dict], interval_s: float
+) -> dict:
+    """Summarise already scored rows (one per seed, in seed order); see evaluate_family."""
     n = len(rows)
     hours = sum(r["hours"] for r in rows)
     result: dict = {

@@ -249,3 +249,39 @@ def write_calibrated_config(
     ]
     with open(path, "w", encoding="utf-8", newline="\n") as handle:
         handle.write("\n".join(lines) + "\n")
+
+
+def write_variant_twins(
+    path: Path | str, fitted: dict[str, tuple[CalibrationResult, Sequence[int], str]]
+) -> None:
+    """Write config/twin_calibrated_variants.yaml: one fitted twin per box variant.
+
+    `fitted` maps a variant name to (result, seeds, label). The nominal twin stays in
+    config/twin_calibrated.yaml and is never touched by this.
+    """
+    lines = [
+        "# Simulation only, fitted from per-box calibration sets. Not real-world evidence.",
+        "# placeholder, not sourced [SOURCE NEEDED]: these numbers describe synthetic boxes.",
+        "# Each variant is fitted by the same restricted regression as the nominal twin, from",
+        "# clean calibration runs generated for THAT box.",
+        "# Regenerate with: python scripts/calibrate_variants.py",
+        f"fit_date: {date.today().isoformat()}",
+        "variants:",
+    ]
+    for name, (result, seeds, label) in fitted.items():
+        p = result.params
+        lines += [
+            f"  {name}:",
+            f"    description: {label}",
+            f"    calibration_seeds: [{', '.join(str(s) for s in seeds)}]",
+            f"    n_intervals: {result.n_rows}",
+            f"    tau_h: {p.tau_h!r}",
+            f"    dT_cool_c: {p.dT_cool_c!r}",
+            f"    sigma_r_c: {p.sigma_r_c!r}",
+            f"    r_squared: {result.r_squared!r}",
+            f"    condition_number: {result.condition_number!r}",
+            f"    fit_intercept_d: {result.d!r}",
+            f"    unrestricted_b_minus_expected: {result.b_minus_expected!r}",
+        ]
+    with open(path, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write("\n".join(lines) + "\n")

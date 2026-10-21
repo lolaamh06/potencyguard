@@ -244,6 +244,17 @@ def print_trust(analysis: TwinAnalysis, out) -> None:
         file=out,
     )
     print(
+        f"  interval: between {bound.shelf_life_used_fraction_low * 100.0:.1f} percent (cooling "
+        f"worked fully) and {bound.shelf_life_used_fraction * 100.0:.1f} percent (no cooling) of "
+        "shelf life used",
+        file=out,
+    )
+    print(
+        "  (only the upper end is meant as a limit; the lower end is not a guarantee: a heat load "
+        "could add damage beyond it)",
+        file=out,
+    )
+    print(
         "  (the bound assumes no cooling at all after that hour and an honest ambient reading;"
         " it is an upper bound, not an estimate)",
         file=out,

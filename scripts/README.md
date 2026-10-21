@@ -11,3 +11,8 @@
 ## evaluate_detectors.py (Phases 3 and 3B)
 
 `python scripts/evaluate_detectors.py [--quick] [--sweep-only] [--ood-sweep-only]` measures the detectors on seeded runs and writes `docs/02-phase-reports/phase-03b-evaluation.md` and `data/generated/evaluation_3b.json` (git-ignored). Seed blocks: calibration 9001 to 9010 (fit the twin only), training 10001 to 10100 (all tuning), test 20001 to 20200 (final numbers, used once). Phase 3B adds the drift and mimic lie families, the twin-out-of-date threshold sweep (training seeds only), the before/after comparison with the Phase 3 behaviour, and the worst-case bound validity table. `--quick` uses 5 seeds per family (for the tests). The Phase 3 report `phase-03-evaluation.md` is kept as it was.
+
+## Phase 3C scripts
+
+- `python scripts/evaluate_3c.py [--quick] [--workers N]` writes `docs/02-phase-reports/phase-03c-evaluation.md` and `data/generated/evaluation_3c.json`. Independent runs are spread over N worker processes (default half the CPU count); results are put back in a fixed order, so the numbers do not depend on N. `--sf-sweep-only` and `--fa-only` run the bound safety-factor sweep and the CUSUM false-alarm study alone. Seed blocks: final 50001-50200 (mismatch and two-node rows use the first 100), per-box calibration 9101-9110, 9201-9210, 9301-9310, false-alarm study 60001-61000; 20001-20200, 30001-30200 and 40001-40200 are development blocks. `--quick` uses 40001-40005 and never the final block.
+- `python scripts/calibrate_variants.py` fits the three variant twins and writes `config/twin_calibrated_variants.yaml`.

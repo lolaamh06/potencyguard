@@ -101,7 +101,7 @@ Seed ledger (details in the evaluation file): calibration 9001 to 9010 (fit the 
 
 ## 11. What we can say on a slide / what we must NOT say
 
-Can say (simulation results on a synthetic box, not real-world evidence): see decision 0006 section 9. In short: five lie families detected in 100 percent of 200 runs; slow drifts of 0.25 to 2 K per hour detected on a healthy box; a worst-case bound that was never below the truth on 200 fresh nominal runs of any family; false tamper verdicts on a box 15 percent below the calibration are gone (0 of 700) and cut from 531 to 132 on a box 15 percent above; mismatched boxes are flagged low confidence; the limits are measured and listed.
+Can say (simulation results on a synthetic box, not real-world evidence): see decision 0006 section 9. In short: five lie families detected in 100 percent of 200 runs; slow drifts of 0.25 to 2 K per hour detected on a healthy box; a worst-case bound that was never below the truth on 200 fresh nominal runs of any family; on a box 15 percent below the calibration no run ends with a tamper verdict (0 of 700, before and after; 100 of 700 still had one at some point) and on a box 15 percent above the runs that end with one fell from 531 to 132 of 700; mismatched boxes are flagged low confidence; the limits are measured and listed.
 
 Must NOT say: that the mimic is caught; that a mismatched box is handled; that slow lies are caught in every situation; that the bound is an estimate or valid on every box; that these results describe real boxes; that any threshold is sourced.
 
@@ -113,4 +113,4 @@ Must NOT say: that the mimic is caught; that a mismatched box is handled; that s
 
 ## 13. Suggested next phase (not started)
 
-Phase 4 (signing and hash chain), which is what actually covers the mimic liar; or a fault-aware residual for slow lies behind a fault and the impossible-state proof under mismatch.
+Phase 4 (signing and hash chain) protects the records after the device signs them; it does NOT cover the mimic liar (see the Phase 3C wording correction). A fault-aware residual for slow lies behind a fault and the impossible-state proof under mismatch was the other candidate (Phase 3C did per-box calibration instead).

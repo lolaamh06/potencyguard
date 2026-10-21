@@ -21,3 +21,6 @@ class TruthSample(BaseModel):
     rh_pct: float
     cooling_duty: float = 0.0
     measured_ambient_c: float = 0.0
+    # Phase 3C: payload node temperature of a two_node box (None for the single-node box).
+    # true_temp_c stays the air node, which the sensor measures.
+    true_payload_temp_c: float | None = None
