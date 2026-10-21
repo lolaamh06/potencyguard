@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PotencyGuard: Prologue style frame (F1)</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="fonts.css">
+<style>
+  /* STYLE FRAME 1: the mood of the Prologue. A style reference, not the final 3D scene.
+     Hand-drawn SVG and CSS; no data on this page; no network request; works offline. */
+  html, body { height: 100%; overflow: hidden; }
+  .stage { position: relative; width: 100vw; height: 100vh; min-height: 480px; overflow: hidden; background: var(--void); isolation: isolate; }
+  .scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(110% 85% at 64% 52%, transparent 30%, rgba(1, 3, 6, 0.9) 100%); }
+  .grain { position: absolute; inset: 0; pointer-events: none; opacity: 0.045; mix-blend-mode: screen;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+
+  .copy { position: absolute; left: clamp(var(--s-5), 7vw, 9rem); top: 50%; transform: translateY(-50%); max-width: min(40rem, 44vw); z-index: 2; }
+  .copy h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(2.2rem, 1.1rem + 3vw, 4.5rem); line-height: 1.04; letter-spacing: -0.015em; color: var(--frost); text-wrap: balance; }
+  .copy h1 em { font-style: normal; color: var(--ice-300); }
+  .copy .rule { width: 3.5rem; height: 2px; background: var(--ice-400); box-shadow: var(--glow-ice); margin: 0 0 var(--s-5); border-radius: 2px; }
+
+  .caption { position: absolute; left: clamp(var(--s-5), 7vw, 9rem); bottom: clamp(var(--s-5), 5vh, var(--s-7)); z-index: 2; font-family: var(--font-ui); font-size: var(--t-small); letter-spacing: 0.14em; text-transform: uppercase; color: var(--mist-hi); display: flex; align-items: center; gap: var(--s-3); }
+  .caption::before { content: ""; width: 1.75rem; height: 1px; background: var(--mist-hi); }
+
+  .cue { position: absolute; left: 50%; bottom: clamp(var(--s-4), 3.5vh, var(--s-6)); transform: translateX(-50%); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: var(--s-2); font-family: var(--font-ui); font-size: var(--t-caption); letter-spacing: 0.2em; text-transform: uppercase; color: var(--mist-hi); }
+  .cue i { display: block; width: 1px; height: 3rem; background: linear-gradient(var(--ice-300), transparent); transform-origin: top; animation: cue 2.8s var(--ease-inout) infinite; }
+  @keyframes cue { 0% { transform: scaleY(0); opacity: 0; } 40% { opacity: 1; } 100% { transform: scaleY(1); opacity: 0; } }
+
+  .rail { position: absolute; right: clamp(var(--s-4), 2.4vw, var(--s-6)); top: 50%; transform: translateY(-50%); z-index: 2; display: flex; flex-direction: column; gap: var(--s-4); align-items: flex-end; font-family: var(--font-ui); font-size: var(--t-caption); color: var(--mist-hi); }
+  .rail li { list-style: none; display: flex; align-items: center; gap: var(--s-3); }
+  .rail ul { margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-3); }
+  .rail li span { opacity: 0; }
+  .rail li.on span { opacity: 1; color: var(--frost); letter-spacing: 0.12em; text-transform: uppercase; }
+  .rail li i { width: 14px; height: 2px; background: var(--line-strong); display: block; }
+  .rail li.on i { width: 28px; background: var(--ice-400); box-shadow: var(--glow-ice); }
+
+  .skip { position: absolute; right: clamp(var(--s-4), 2.4vw, var(--s-6)); top: clamp(var(--s-4), 3vh, var(--s-5)); z-index: 3; font-family: var(--font-ui); font-size: var(--t-small); font-weight: 500; color: var(--frost); background: rgba(7, 12, 22, 0.6); border: 1px solid var(--line-strong); border-radius: var(--r-pill); padding: var(--s-2) var(--s-4); display: inline-flex; gap: var(--s-2); align-items: center; cursor: pointer; transition: border-color var(--d-quick) var(--ease-out), box-shadow var(--d-quick) var(--ease-out); }
+  .skip:hover { border-color: var(--ice-300); box-shadow: var(--glow-ice); }
+  .skip svg { width: 14px; height: 14px; }
+
+  @keyframes breathe { 0%, 100% { opacity: 0.78; } 50% { opacity: 1; } }
+  @keyframes drift { 0% { transform: translate(0, 0); opacity: 0; } 25% { opacity: 0.22; } 100% { transform: translate(60px, -90px); opacity: 0; } }
+  .glow { animation: breathe 6.5s var(--ease-inout) infinite; }
+  .vapour ellipse { animation: drift 11s var(--ease-out) infinite; }
+  .vapour ellipse:nth-child(2) { animation-delay: -3.6s; } .vapour ellipse:nth-child(3) { animation-delay: -7.2s; }
+  @media (prefers-reduced-motion: reduce) { .glow, .vapour ellipse, .cue i { animation: none; } }
+
+  @media (max-width: 760px) {
+    .stage::after { content: ""; position: absolute; inset: 45% 0 0 0; background: linear-gradient(transparent, rgba(2, 4, 8, 0.88) 38%); z-index: 1; pointer-events: none; }
+    .copy { left: var(--s-5); right: var(--s-5); max-width: none; top: auto; bottom: 20vh; transform: none; }
+    .copy h1 { font-size: clamp(1.75rem, 8.2vw, 2.4rem); }
+    .rail, .cue { display: none; }
+    .caption { bottom: var(--s-5); left: var(--s-5); }
+    .skip { top: var(--s-4); right: var(--s-4); }
+  }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <svg class="scene" id="scene" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" role="img" aria-label="A single glass vial glowing from inside, in the dark cavity of a frosted insulated box. Illustration.">
+    <defs>
+      <radialGradient id="halo" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#5DD6FF" stop-opacity="0.42"/><stop offset="0.45" stop-color="#14506B" stop-opacity="0.22"/><stop offset="1" stop-color="#04070D" stop-opacity="0"/></radialGradient>
+      <linearGradient id="liquid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9BE7FF"/><stop offset="0.35" stop-color="#5DD6FF"/><stop offset="1" stop-color="#14506B"/></linearGradient>
+      <linearGradient id="glass" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#E8F4FF" stop-opacity="0.34"/><stop offset="0.14" stop-color="#E8F4FF" stop-opacity="0.04"/><stop offset="0.8" stop-color="#E8F4FF" stop-opacity="0.02"/><stop offset="1" stop-color="#E8F4FF" stop-opacity="0.22"/></linearGradient>
+      <linearGradient id="foam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#060a13"/><stop offset="1" stop-color="#04070D"/></linearGradient>
+      <linearGradient id="seamTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E8F4FF" stop-opacity="0.1"/><stop offset="1" stop-color="#E8F4FF" stop-opacity="0"/></linearGradient>
+      <linearGradient id="seamBottom" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#9BE7FF" stop-opacity="0.12"/><stop offset="1" stop-color="#9BE7FF" stop-opacity="0"/></linearGradient>
+      <linearGradient id="floorFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5DD6FF" stop-opacity="0.22"/><stop offset="1" stop-color="#5DD6FF" stop-opacity="0"/></linearGradient>
+      <filter id="blur40" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="40"/></filter>
+      <filter id="blur14" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter>
+      <filter id="blur3" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>
+      <clipPath id="bodyClip"><rect x="1135" y="470" width="170" height="360" rx="34"/></clipPath>
+    </defs>
+
+    <rect width="1920" height="1080" fill="#04070D"/>
+    <!-- the cavity: foam walls above and below, hairlines of the lid seam -->
+    <rect x="0" y="0" width="1920" height="150" fill="url(#foam)"/>
+    <rect x="0" y="930" width="1920" height="150" fill="#070C16"/>
+    <rect x="0" y="150" width="1920" height="70" fill="url(#seamTop)"/>
+    <rect x="0" y="860" width="1920" height="70" fill="url(#seamBottom)"/>
+    <path d="M0 150 H1920 M0 930 H1920" stroke="#1B2A44" stroke-width="2"/>
+    <path d="M0 168 H1920 M0 912 H1920" stroke="#111B2E" stroke-width="1"/>
+    <g stroke="#111B2E" stroke-width="1" opacity="0.8" id="foamlines"></g>
+
+    <!-- light: halo behind the vial, glow on the floor -->
+    <ellipse class="glow" cx="1220" cy="620" rx="640" ry="420" fill="url(#halo)"/>
+    <ellipse cx="1220" cy="905" rx="300" ry="26" fill="url(#floorFade)"/>
+    <ellipse cx="1220" cy="925" rx="170" ry="9" fill="#5DD6FF" opacity="0.28" filter="url(#blur14)"/>
+
+    <!-- the vial -->
+    <g id="vial" transform="translate(1220 640) scale(1.22) translate(-1220 -640)">
+      <ellipse cx="1220" cy="828" rx="104" ry="14" fill="#04070D" opacity="0.75"/>
+      <!-- liquid: blurred copy gives the glow, crisp copy the body -->
+      <g clip-path="url(#bodyClip)">
+        <rect class="glow" x="1135" y="560" width="170" height="270" fill="#5DD6FF" opacity="0.55" filter="url(#blur14)"/>
+        <rect x="1135" y="560" width="170" height="270" fill="url(#liquid)"/>
+        <path d="M1135 560 Q1177 548 1220 560 T1305 560" stroke="#E8F4FF" stroke-opacity="0.7" stroke-width="2" fill="none"/>
+        <ellipse cx="1190" cy="640" rx="5" ry="5" fill="#E8F4FF" opacity="0.5"/><ellipse cx="1248" cy="712" rx="3" ry="3" fill="#E8F4FF" opacity="0.45"/><ellipse cx="1214" cy="770" rx="4" ry="4" fill="#E8F4FF" opacity="0.35"/>
+      </g>
+      <!-- glass -->
+      <rect x="1135" y="470" width="170" height="360" rx="34" fill="url(#glass)" stroke="#9BE7FF" stroke-opacity="0.55" stroke-width="2.5"/>
+      <path d="M1170 410 H1270 V472 H1170 Z" fill="url(#glass)" stroke="#9BE7FF" stroke-opacity="0.55" stroke-width="2.5"/>
+      <rect x="1158" y="364" width="124" height="46" rx="10" fill="#0B1220" stroke="#1B2A44" stroke-width="2"/>
+      <path d="M1170 380 H1270 M1170 394 H1270" stroke="#111B2E" stroke-width="2"/>
+      <path d="M1152 500 V780" stroke="#E8F4FF" stroke-opacity="0.5" stroke-width="5" stroke-linecap="round" filter="url(#blur3)"/>
+      <path d="M1163 662 H1277 M1163 722 H1277" stroke="#E8F4FF" stroke-opacity="0.25" stroke-width="1.5"/>
+    </g>
+
+    <!-- vapour: cold breath, slow -->
+    <g class="vapour" filter="url(#blur14)">
+      <ellipse cx="1060" cy="890" rx="130" ry="20" fill="#9BE7FF" opacity="0"/>
+      <ellipse cx="1360" cy="880" rx="150" ry="22" fill="#E8F4FF" opacity="0"/>
+      <ellipse cx="1210" cy="905" rx="220" ry="16" fill="#9BE7FF" opacity="0"/>
+    </g>
+
+    <!-- frost: drawn by the script below from a fixed seed -->
+    <g id="frost" fill="none" stroke="#E8F4FF" stroke-linecap="round"></g>
+    <g id="motes" fill="#E8F4FF"></g>
+  </svg>
+
+  <div class="vignette"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <button class="skip" type="button" aria-label="Skip the story and go to the Control Room"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2l6 5-6 5M8 2l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>Skip to Control Room</button>
+
+  <div class="copy">
+    <div class="rule" aria-hidden="true"></div>
+    <h1>Somewhere between the factory and the clinic, a medicine can stop being <em>medicine.</em></h1>
+  </div>
+  <div class="caption">An illustrative journey.</div>
+  <div class="cue" aria-hidden="true"><i></i>Scroll</div>
+  <nav class="rail" aria-label="Story progress">
+    <ul>
+      <li class="on"><span>Prologue</span><i></i></li><li><span>1</span><i></i></li><li><span>2</span><i></i></li><li><span>3</span><i></i></li><li><span>4</span><i></i></li><li><span>5</span><i></i></li><li><span>6</span><i></i></li>
+    </ul>
+  </nav>
+</div>
+
+<script>
+// Frost, foam seams and dust motes are drawn from a fixed seed so the frame looks the same every time.
+(function () {
+  let a = 20261021;
+  const rnd = () => ((a = (a * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const NS = "http://www.w3.org/2000/svg";
+  const add = (parent, name, attrs) => { const e = document.createElementNS(NS, name); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
+  const frost = document.getElementById("frost");
+  function crystal(x, y, len, dirx, diry, depth) {
+    if (depth > 2 || len < 5) return;
+    const ex = x + dirx * len, ey = y + diry * len;
+    add(frost, "line", { x1: x, y1: y, x2: ex, y2: ey, "stroke-width": Math.max(0.5, 1.3 - depth * 0.4), "stroke-opacity": (0.34 - depth * 0.09).toFixed(2) });
+    for (const s of [-1, 1]) {
+      const ang = Math.atan2(diry, dirx) + s * (0.85 + rnd() * 0.25);
+      crystal(x + dirx * len * 0.55, y + diry * len * 0.55, len * 0.45, Math.cos(ang), Math.sin(ang), depth + 1);
+    }
+  }
+  // along the lid seam (top) and the floor line (bottom) and around the vial base
+  for (let i = 0; i < 110; i++) { const x = rnd() * 1920; crystal(x, 150 + rnd() * 3, 9 + rnd() * 24, (rnd() - 0.5) * 0.5, 0.85 + rnd() * 0.15, 0); }
+  for (let i = 0; i < 90; i++) { const x = rnd() * 1920; crystal(x, 930 - rnd() * 3, 9 + rnd() * 22, (rnd() - 0.5) * 0.5, -(0.85 + rnd() * 0.15), 0); }
+  for (let i = 0; i < 18; i++) { const x = 1080 + rnd() * 280; crystal(x, 922 - rnd() * 3, 7 + rnd() * 14, (rnd() - 0.5) * 0.8, -(0.7 + rnd() * 0.3), 0); }
+  const lines = document.getElementById("foamlines");
+  for (let i = 0; i < 28; i++) { const x = (i + rnd()) * 70; add(lines, "path", { d: `M${x} 0 V${130 + rnd() * 18}` }); add(lines, "path", { d: `M${x} 1080 V${950 - rnd() * 18}` }); }
+  const motes = document.getElementById("motes");
+  for (let i = 0; i < 46; i++) add(motes, "circle", { cx: 700 + rnd() * 1200, cy: 200 + rnd() * 700, r: (0.6 + rnd() * 1.6).toFixed(2), opacity: (0.08 + rnd() * 0.3).toFixed(2) });
+
+  // phone and portrait: crop the scene around the vial
+  const svg = document.getElementById("scene");
+  const fit = () => svg.setAttribute("viewBox", innerWidth / innerHeight < 0.9 ? "700 230 1040 1200" : "0 0 1920 1080");
+  fit(); addEventListener("resize", fit);
+  document.querySelector(".skip").addEventListener("click", () => { location.href = "frame-3-control-room.html"; });
+})();
+</script>
+</body>
+</html>

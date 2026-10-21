@@ -1,0 +1,265 @@
+{
+ "backgrounds": {
+  "ink-700": "#111B2E",
+  "ink-800": "#0B1220",
+  "ink-900": "#070C16",
+  "void": "#04070D"
+ },
+ "method": "WCAG 2.x relative luminance contrast ratio, computed in this script",
+ "rows": [
+  {
+   "foreground": "frost",
+   "hex": "#E8F4FF",
+   "minimum": 7.0,
+   "passes_on": [
+    "void",
+    "ink-900",
+    "ink-800",
+    "ink-700"
+   ],
+   "ratios": {
+    "ink-700": 15.42,
+    "ink-800": 16.78,
+    "ink-900": 17.53,
+    "void": 18.07
+   },
+   "role": "primary text"
+  },
+  {
+   "foreground": "mist-hi",
+   "hex": "#A9BAD1",
+   "minimum": 7.0,
+   "passes_on": [
+    "void",
+    "ink-900",
+    "ink-800",
+    "ink-700"
+   ],
+   "ratios": {
+    "ink-700": 8.71,
+    "ink-800": 9.48,
+    "ink-900": 9.91,
+    "void": 10.21
+   },
+   "role": "secondary text"
+  },
+  {
+   "foreground": "mist",
+   "hex": "#8FA3BF",
+   "minimum": 4.5,
+   "passes_on": [
+    "void",
+    "ink-900",
+    "ink-800",
+    "ink-700"
+   ],
+   "ratios": {
+    "ink-700": 6.69,
+    "ink-800": 7.27,
+    "ink-900": 7.6,
+    "void": 7.84
+   },
+   "role": "tertiary text, large only"
+  },
+  {
+   "foreground": "ice-400",
+   "hex": "#5DD6FF",
+   "minimum": 7.0,
+   "passes_on": [
+    "void",
+    "ink-900",
+    "ink-800",
+    "ink-700"
+   ],
+   "ratios": {
+    "ink-700": 10.27,
+    "ink-800": 11.17,
+    "ink-900": 11.67,
+    "void": 12.03
+   },
+   "role": "cold or safe accent text"
+  },
+  {
+   "foreground": "ice-300",
+   "hex": "#9BE7FF",
+   "minimum": 7.0,
+   "passes_on": [
+    "void",
+    "ink-900",
+    "ink-800",
+    "ink-700"
+   ],
+   "ratios": {
+    "ink-700": 12.51,
+    "ink-800": 13.61,
+    "ink-900": 14.23,
+    "void": 14.66
+   },
+   "role": "highlight text"
+  },
+  {
+   "foreground": "ember-400",
+   "hex": "#FFB347",
+   "minimum": 7.0,
+   "passes_on": [
+    "void",
+    "ink-900",
+    "ink-800",
+    "ink-700"
+   ],
+   "ratios": {
+    "ink-700": 9.66,
+    "ink-800": 10.51,
+    "ink-900": 10.99,
+    "void": 11.32
+   },
+   "role": "warning text"
+  },
+  {
+   "foreground": "ember-500",
+   "hex": "#FF7A3D",
+   "minimum": 7.0,
+   "passes_on": [
+    "void",
+    "ink-900",
+    "ink-800"
+   ],
+   "ratios": {
+    "ink-700": 6.64,
+    "ink-800": 7.22,
+    "ink-900": 7.55,
+    "void": 7.78
+   },
+   "role": "heat text"
+  },
+  {
+   "foreground": "danger-text",
+   "hex": "#FF8A7A",
+   "minimum": 7.0,
+   "passes_on": [
+    "void",
+    "ink-900",
+    "ink-800",
+    "ink-700"
+   ],
+   "ratios": {
+    "ink-700": 7.51,
+    "ink-800": 8.17,
+    "ink-900": 8.54,
+    "void": 8.8
+   },
+   "role": "danger or tamper text"
+  },
+  {
+   "foreground": "ember-600",
+   "hex": "#FF3D2E",
+   "minimum": 3.0,
+   "passes_on": [
+    "void",
+    "ink-900",
+    "ink-800",
+    "ink-700"
+   ],
+   "ratios": {
+    "ink-700": 4.88,
+    "ink-800": 5.31,
+    "ink-900": 5.55,
+    "void": 5.72
+   },
+   "role": "danger fill, graphics and large text"
+  },
+  {
+   "foreground": "verify",
+   "hex": "#3DF2B1",
+   "minimum": 7.0,
+   "passes_on": [
+    "void",
+    "ink-900",
+    "ink-800",
+    "ink-700"
+   ],
+   "ratios": {
+    "ink-700": 11.91,
+    "ink-800": 12.96,
+    "ink-900": 13.54,
+    "void": 13.96
+   },
+   "role": "verified text"
+  },
+  {
+   "foreground": "planner-300",
+   "hex": "#B7AEFF",
+   "minimum": 7.0,
+   "passes_on": [
+    "void",
+    "ink-900",
+    "ink-800",
+    "ink-700"
+   ],
+   "ratios": {
+    "ink-700": 8.62,
+    "ink-800": 9.37,
+    "ink-900": 9.79,
+    "void": 10.09
+   },
+   "role": "planner text"
+  },
+  {
+   "foreground": "planner",
+   "hex": "#8B7CFF",
+   "minimum": 3.0,
+   "passes_on": [
+    "void",
+    "ink-900",
+    "ink-800",
+    "ink-700"
+   ],
+   "ratios": {
+    "ink-700": 5.27,
+    "ink-800": 5.73,
+    "ink-900": 5.99,
+    "void": 6.17
+   },
+   "role": "planner fill, graphics and large text"
+  },
+  {
+   "foreground": "line-strong",
+   "hex": "#5E7899",
+   "minimum": 3.0,
+   "passes_on": [
+    "void",
+    "ink-900",
+    "ink-800",
+    "ink-700"
+   ],
+   "ratios": {
+    "ink-700": 3.79,
+    "ink-800": 4.12,
+    "ink-900": 4.31,
+    "void": 4.44
+   },
+   "role": "borders of controls, chart axes"
+  }
+ ],
+ "tokens": {
+  "danger-text": "#FF8A7A",
+  "ember-400": "#FFB347",
+  "ember-500": "#FF7A3D",
+  "ember-600": "#FF3D2E",
+  "frost": "#E8F4FF",
+  "ice-300": "#9BE7FF",
+  "ice-400": "#5DD6FF",
+  "ice-700": "#14506B",
+  "ink-700": "#111B2E",
+  "ink-800": "#0B1220",
+  "ink-900": "#070C16",
+  "line": "#1B2A44",
+  "line-strong": "#5E7899",
+  "mist": "#8FA3BF",
+  "mist-hi": "#A9BAD1",
+  "planner": "#8B7CFF",
+  "planner-300": "#B7AEFF",
+  "verify": "#3DF2B1",
+  "void": "#04070D"
+ }
+}

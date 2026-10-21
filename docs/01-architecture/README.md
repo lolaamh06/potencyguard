@@ -6,3 +6,6 @@
 
 - `signed-record-format.md` (Phase 4): the exact byte rules for signed records.
 - `api.md` (Phase 6): the backend endpoints and PowerShell examples. No authentication in this phase.
+- `design-system.md` (F1): colour, type, spacing, motion tokens and the font proposal. Binding tokens are in `style-frames/tokens.css`.
+- `storyboard.md` (F1): scenes, copy, timing and the Control Room wireframe. Items marked PROPOSE await the decision-maker.
+- `style-frames/` (F1): four static pages, the data generator and the self-hosted fonts. See its README.

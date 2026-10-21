@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PotencyGuard: Control Room style frame (F1)</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="fonts.css">
+<style>
+  /* STYLE FRAME 3: the Control Room at 1920x1080 (it scales with the window width).
+     EVERY number on this page is read from data/control_room.json, made by
+     docs/01-architecture/style-frames/generate_data.py from the project's existing edge, planner and
+     backend code (recording: data/recordings/hidden_spoilage.jsonl, checkpoint of `python -m planner demo`).
+     Styling placeholders (NOT data): the 2D globe drawing, the scenario and speed chips, the disabled
+     Approve / Override / Reject buttons, the guarded Tamper switch. Synthetic product, model output. */
+  html { font-size: calc(100vw / 110); }
+  body { height: 100vh; overflow: hidden; background: radial-gradient(90rem 50rem at 50% -20%, #0c1830 0%, var(--void) 65%); }
+  .app { height: 100vh; padding: 0.8rem 0.8rem; display: grid; gap: 0.8rem; grid-template-rows: 3.2rem 19.2rem 21.2rem minmax(0, 1fr); font-size: 1rem; }
+  .app > * { min-height: 0; min-width: 0; }
+  h2, h3 { margin: 0; }
+
+  /* ---------- shared bits ---------- */
+  .panel { background: linear-gradient(180deg, var(--ink-900), #060a13); border-radius: 0.9rem; box-shadow: var(--elev-1); padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 0.5rem; overflow: hidden; }
+  .eyebrow { font-family: var(--font-ui); font-weight: 600; font-size: 0.84rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mist-hi); display: flex; justify-content: space-between; align-items: baseline; gap: 0.6rem; }
+  .eyebrow small { font-weight: 500; letter-spacing: 0.02em; text-transform: none; font-size: 0.84rem; }
+  .chip { display: inline-flex; align-items: center; gap: 0.4rem; font-family: var(--font-ui); font-weight: 600; font-size: 0.86rem; padding: 0.22rem 0.7rem; border-radius: var(--r-pill); border: 1.5px solid currentColor; white-space: nowrap; }
+  .chip svg { width: 0.95em; height: 0.95em; flex: none; }
+  .chip.warn { color: var(--ember-400); } .chip.bad { color: var(--danger-text); } .chip.ok { color: var(--verify); } .chip.plan { color: var(--planner-300); } .chip.cold { color: var(--ice-300); } .chip.mute { color: var(--mist-hi); }
+  .num { font-family: var(--font-mono); }
+  .ic { width: 1em; height: 1em; display: inline-block; vertical-align: -0.12em; }
+
+  /* ---------- top bar ---------- */
+  .bar { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1.4rem; padding: 0 0.4rem; position: relative; }
+  .brand { display: flex; align-items: baseline; gap: 0.7rem; }
+  .brand b { font-family: var(--font-display); font-weight: 600; font-size: 1.7rem; letter-spacing: -0.01em; }
+  .brand span { white-space: nowrap; font-family: var(--font-ui); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mist-hi); border-left: 1px solid var(--line-strong); padding-left: 0.7rem; }
+  .scen, .ctrl { display: flex; gap: 0.4rem; align-items: center; }
+  .scen { justify-content: center; }
+  .btn { font-family: var(--font-ui); font-weight: 500; font-size: 0.88rem; color: var(--frost); background: var(--ink-800); border: 1px solid var(--line-strong); border-radius: 0.5rem; padding: 0.38rem 0.8rem; display: inline-flex; align-items: center; gap: 0.45rem; cursor: pointer; transition: border-color var(--d-quick) var(--ease-out), box-shadow var(--d-quick) var(--ease-out), background var(--d-quick) var(--ease-out); }
+  .btn kbd { font-family: var(--font-mono); font-size: 0.75rem; color: var(--mist-hi); border: 1px solid var(--line-strong); border-radius: 4px; padding: 0 0.3rem; }
+  .btn:hover { border-color: var(--ice-300); }
+  .btn[aria-pressed="true"] { border-color: var(--ice-400); background: #0f2a3c; box-shadow: var(--glow-ice); }
+  .btn[aria-pressed="true"]::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--ice-400); }
+  .btn:disabled { color: var(--mist); border-color: var(--line); cursor: not-allowed; }
+  .drawer { position: absolute; right: 0.4rem; top: calc(100% + 0.5rem); width: 26rem; background: var(--ink-800); border-radius: 0.8rem; box-shadow: var(--elev-2); padding: 1rem 1.2rem; z-index: 20; display: none; }
+  .drawer[data-open="true"] { display: block; }
+  .drawer h2 { font-family: var(--font-display); font-weight: 400; font-size: 1.3rem; margin-bottom: 0.6rem; }
+  .drawer dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 0.35rem 1rem; font-size: 0.9rem; }
+  .drawer dt { color: var(--mist-hi); } .drawer dd { margin: 0; font-family: var(--font-mono); text-align: right; overflow-wrap: anywhere; }
+
+  /* ---------- row A ---------- */
+  .rowA { display: grid; grid-template-columns: 21rem minmax(0, 1fr) 34rem; gap: 0.8rem; }
+  .ship h2 { font-family: var(--font-display); font-weight: 400; font-size: 1.9rem; line-height: 1.05; }
+  .ship .route { color: var(--mist-hi); font-size: 0.92rem; }
+  .prog { margin-top: 0.2rem; }
+  .prog .t { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--mist-hi); margin-bottom: 0.3rem; }
+  .prog .t .num { color: var(--frost); }
+  .prog .track { height: 0.5rem; border-radius: 0.3rem; background: var(--ink-700); overflow: hidden; }
+  .prog .track i { display: block; height: 100%; background: linear-gradient(90deg, var(--ice-700), var(--ice-400)); }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: auto; }
+
+  .globe { position: relative; padding: 0; }
+  .globe svg { width: 100%; height: 100%; display: block; }
+  .globe .tag { position: absolute; left: 1rem; top: 0.8rem; font-size: 0.8rem; color: var(--mist-hi); font-family: var(--font-ui); background: rgba(4, 7, 13, 0.7); padding: 0.15rem 0.6rem; border-radius: var(--r-pill); border: 1px dashed var(--line-strong); }
+
+  .ring { flex-direction: row; gap: 1.3rem; align-items: center; }
+  .ring .gauge { position: relative; flex: none; width: 13.4rem; height: 13.4rem; }
+  .ring .gauge svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring .gauge .mid { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .ring .gauge .mid b { font-family: var(--font-mono); font-weight: 500; font-size: 2.25rem; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums slashed-zero; }
+  .ring .gauge .mid b small { font-size: 0.55em; color: var(--mist-hi); margin-left: 0.08em; }
+  .ring .gauge .mid span { font-size: 0.78rem; color: var(--mist-hi); margin-top: 0.25rem; max-width: 7.2rem; line-height: 1.2; }
+  .figs { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem 1rem; align-content: center; }
+  .fig { display: flex; flex-direction: column; gap: 0.1rem; }
+  .fig label { font-size: 0.82rem; color: var(--mist-hi); line-height: 1.2; }
+  .fig b { font-family: var(--font-mono); font-weight: 500; font-size: 1.6rem; line-height: 1.05; font-variant-numeric: tabular-nums slashed-zero; }
+  .fig b small { font-size: 0.5em; color: var(--mist-hi); margin-left: 0.15em; font-weight: 400; }
+  .fig.warn b { color: var(--ember-400); } .fig.bad b { color: var(--danger-text); }
+  .figs .note { grid-column: 1 / -1; font-size: 0.78rem; color: var(--mist-hi); border-top: 1px solid var(--line); padding-top: 0.5rem; }
+
+  /* ---------- row B ---------- */
+  .rowB { display: grid; grid-template-columns: minmax(0, 1fr) 37rem; gap: 0.8rem; }
+  .chart { padding-bottom: 0.5rem; }
+  .cwrap { position: relative; flex: 1; min-height: 0; }
+  .cwrap svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .key { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; font-size: 0.84rem; color: var(--mist-hi); }
+  .key span { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .key svg { width: 1.6rem; height: 0.7rem; }
+
+  .chain .ribbon { display: flex; align-items: center; gap: 0; margin-top: 0.2rem; }
+  .tok { position: relative; flex: 1 1 0; min-width: 0; height: 3.4rem; display: flex; align-items: center; justify-content: center; border-radius: 0.35rem; font-size: 0.62rem; font-family: var(--font-mono); }
+  .tok svg { width: 55%; height: 55%; }
+  .tok svg { width: 62%; height: 62%; }
+  .tok.v { background: rgba(61, 242, 177, 0.1); border: 1.5px solid var(--verify); color: var(--verify); box-shadow: 0 0 10px rgba(61, 242, 177, 0.25); }
+  .tok.b { background: rgba(255, 61, 46, 0.16); border: 1.5px solid var(--ember-600); color: var(--danger-text); box-shadow: var(--glow-danger); transform: scale(1.18); z-index: 2; }
+  .tok.a { background: transparent; border: 1.5px dashed var(--line-strong); color: var(--mist); opacity: 0.8; }
+  .link { flex: none; width: 3%; height: 2px; background: var(--verify); box-shadow: 0 0 6px rgba(61, 242, 177, 0.5); }
+  .link.b { background: var(--ember-600); box-shadow: none; } .link.a { background: repeating-linear-gradient(90deg, var(--line-strong) 0 3px, transparent 3px 6px); box-shadow: none; }
+  .scale { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.8rem; color: var(--mist-hi); margin-top: 0.15rem; }
+  .res { display: grid; gap: 0.3rem; font-size: 0.84rem; margin-top: auto; }
+  .res div { display: flex; gap: 0.55rem; align-items: flex-start; line-height: 1.3; }
+  .res .ic { width: 1.1rem; height: 1.1rem; flex: none; margin-top: 0.1rem; }
+  .res .num { font-size: 0.82rem; }
+  .tamper { display: flex; align-items: center; gap: 0.8rem; margin-top: 0.4rem; }
+  .guard { white-space: nowrap; position: relative; display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0.9rem 0.4rem 0.5rem; border: 1.5px solid var(--ember-500); color: var(--ember-400); border-radius: 0.6rem; font-weight: 600; font-size: 0.88rem; background: repeating-linear-gradient(135deg, rgba(255, 122, 61, 0.1) 0 8px, transparent 8px 16px); }
+  .guard .hold { width: 1.7rem; height: 1.7rem; }
+  .tamper small { color: var(--mist-hi); font-size: 0.78rem; line-height: 1.25; }
+
+  /* ---------- row C ---------- */
+  .rec { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) 20rem; gap: 1.6rem; padding: 0.8rem 1.2rem; }
+  .rec > div { min-height: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+  .atable { display: grid; gap: 0.3rem; }
+  .arow { display: grid; grid-template-columns: 9rem minmax(0, 1fr) 11.5rem; gap: 0.8rem; align-items: center; }
+  .arow .name { font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; color: var(--mist-hi); }
+  .arow .name.pick { color: var(--frost); font-weight: 600; }
+  .arow .name svg { width: 0.9rem; height: 0.9rem; flex: none; }
+  .pair { display: grid; gap: 3px; }
+  .b1, .b2 { height: 0.55rem; background: var(--ink-800); border-radius: 3px; position: relative; }
+  .b1 i, .b2 i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; }
+  .b1 i { background: linear-gradient(90deg, #26455f, var(--ice-400)); }
+  .b2 i { background: linear-gradient(90deg, #3a3380, var(--planner)); }
+  .vals { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; font-family: var(--font-mono); font-size: 0.9rem; font-variant-numeric: tabular-nums slashed-zero; text-align: right; }
+  .vals .e { color: var(--ice-300); } .vals .c { color: var(--planner-300); }
+  .vhead { display: grid; grid-template-columns: 9rem minmax(0, 1fr) 11.5rem; gap: 0.8rem; font-size: 0.82rem; color: var(--mist-hi); white-space: nowrap; }
+  .vhead span:last-child { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; text-align: right; }
+  .legend { display: flex; flex-wrap: nowrap; gap: 1.1rem; font-size: 0.82rem; color: var(--mist-hi); white-space: nowrap; }
+  .legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .legend i { width: 1.1rem; height: 0.5rem; border-radius: 2px; display: inline-block; }
+  .reasons { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.32rem; font-size: 0.88rem; line-height: 1.26; color: var(--mist-hi); }
+  .reasons li { display: flex; gap: 0.5rem; }
+  .reasons li svg { width: 0.95rem; height: 0.95rem; flex: none; margin-top: 0.12rem; color: var(--planner-300); }
+  .reasons li span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .more { color: var(--planner-300); font-size: 0.8rem; font-weight: 600; }
+  .route-box { align-items: stretch; gap: 0.55rem; }
+  .route-box .chip { align-self: flex-start; font-size: 0.95rem; }
+  .route-box p { margin: 0; font-size: 0.88rem; color: var(--mist-hi); line-height: 1.3; }
+  .acts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-top: auto; }
+  .acts .btn { justify-content: center; padding: 0.5rem 0.2rem; font-weight: 600; }
+  .rec h3 { font-family: var(--font-display); font-weight: 400; font-size: 1.5rem; line-height: 1.1; }
+  .rec h3 b { color: var(--planner-300); font-weight: 600; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-check" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 1.8l6.5 11.6h-13z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 6.2v3.4M8 11.4v.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-crack" viewBox="0 0 16 16"><path d="M9.5 1.5L6 7.2l3.6 1.3L6.3 14.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-dash" viewBox="0 0 16 16"><path d="M4 8h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 16 16"><path d="M8 1.5l5.5 2v4.2c0 3.2-2.3 5.6-5.5 6.8-3.2-1.2-5.5-3.6-5.5-6.8V3.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M5.2 10.8l5.6-5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-user" viewBox="0 0 16 16"><circle cx="8" cy="5.2" r="2.7" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M2.6 14c.5-3 2.7-4.4 5.4-4.4s4.9 1.4 5.4 4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+    <symbol id="i-diamond" viewBox="0 0 16 16"><path d="M8 1.5l6.5 6.5L8 14.5 1.5 8z" fill="currentColor"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5.2 7V5a2.8 2.8 0 0 1 5.6 0v2" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 16 16"><path d="M5 3v10M11 3v10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-down" viewBox="0 0 16 16"><path d="M3.5 6l4.5 4.5L12.5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-x" viewBox="0 0 16 16"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-dot" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<div class="app" id="app" aria-live="off">
+  <header class="bar">
+    <div class="brand"><b>PotencyGuard</b><span>Simulation</span></div>
+    <nav class="scen" aria-label="Scenario (style only)" id="scen"></nav>
+    <div class="ctrl">
+      <button class="btn" type="button" aria-pressed="true">1&times;</button><button class="btn" type="button" aria-pressed="false">4&times;</button><button class="btn" type="button" aria-pressed="false">16&times;</button>
+      <button class="btn" type="button" aria-label="Pause (style only)"><svg class="ic"><use href="#i-pause"/></svg><kbd>Space</kbd></button>
+      <button class="btn" id="prov-btn" type="button" aria-expanded="false" aria-controls="prov"><svg class="ic"><use href="#i-down"/></svg>Provenance<kbd>P</kbd></button>
+    </div>
+    <aside class="drawer" id="prov" role="region" aria-label="Provenance" data-open="false">
+      <h2>Where this comes from</h2>
+      <dl id="prov-list"></dl>
+    </aside>
+  </header>
+
+  <section class="rowA">
+    <article class="panel ship" aria-label="Shipment">
+      <div class="eyebrow">Shipment</div>
+      <h2 id="s-id"></h2>
+      <div class="route">Origin (illustrative) &rarr; Destination (illustrative)</div>
+      <div class="prog"><div class="t"><span>Journey</span><span class="num" id="s-prog"></span></div><div class="track"><i id="s-bar"></i></div></div>
+      <div class="chips" id="s-chips"></div>
+    </article>
+
+    <article class="panel globe" aria-label="Route (2D placeholder for the 3D globe)">
+      <svg viewBox="0 -24 900 330" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <defs><radialGradient id="g1" cx="50%" cy="115%" r="80%"><stop offset="0" stop-color="#14506B" stop-opacity="0.65"/><stop offset="1" stop-color="#04070D" stop-opacity="0"/></radialGradient></defs>
+        <rect x="-200" y="-100" width="1300" height="500" fill="#070c16"/>
+        <ellipse cx="450" cy="420" rx="520" ry="330" fill="url(#g1)"/>
+        <g id="dots" fill="#5E7899"></g>
+        <path d="M130 215 C 300 40, 600 40, 770 190" fill="none" stroke="#5DD6FF" stroke-width="2.4" stroke-opacity="0.9"/>
+        <path id="done" d="M130 215 C 300 40, 600 40, 770 190" fill="none" stroke="#FFB347" stroke-width="3.4" stroke-linecap="round"/>
+        <path d="M130 215 C 330 150, 560 150, 770 190" fill="none" stroke="#8B7CFF" stroke-width="2" stroke-dasharray="7 7" stroke-opacity="0.8"/>
+        <circle cx="130" cy="215" r="7" fill="#04070D" stroke="#9BE7FF" stroke-width="2.4"/><circle cx="770" cy="190" r="7" fill="#04070D" stroke="#9BE7FF" stroke-width="2.4"/>
+        <g id="marker"><circle r="14" fill="#FFB347" fill-opacity="0.25"/><path d="M0 -9 L9 0 L0 9 L-9 0 Z" fill="#FFB347" stroke="#04070D" stroke-width="2"/></g>
+        <text x="130" y="244" fill="#A9BAD1" font-size="14" text-anchor="middle" font-family="Inter, sans-serif">Origin (illustrative)</text>
+        <text x="770" y="219" fill="#A9BAD1" font-size="14" text-anchor="middle" font-family="Inter, sans-serif">Destination (illustrative)</text>
+        <text x="450" y="124" fill="#B7AEFF" font-size="13" text-anchor="middle" font-family="Inter, sans-serif">dashed: alternative route (depot)</text>
+      </svg>
+      <span class="tag">Styling placeholder for the 3D globe</span>
+    </article>
+
+    <article class="panel ring" aria-label="Potency">
+      <div class="gauge">
+        <svg viewBox="0 0 200 200" aria-hidden="true">
+          <circle cx="100" cy="100" r="88" fill="none" stroke="#111b2e" stroke-width="14"/>
+          <circle id="ring-rep" cx="100" cy="100" r="88" fill="none" stroke="#5DD6FF" stroke-width="14" stroke-linecap="round" style="filter: drop-shadow(0 0 7px rgba(93,214,255,0.55))"/>
+          <circle cx="100" cy="100" r="68" fill="none" stroke="#111b2e" stroke-width="10"/>
+          <circle id="ring-worst" cx="100" cy="100" r="68" fill="none" stroke="#FF7A3D" stroke-width="10" stroke-linecap="round" stroke-dasharray="1 0"/>
+        </svg>
+        <div class="mid"><b id="r-pot"></b><span>potency as reported, data not trusted</span></div>
+      </div>
+      <div class="figs" id="figs"></div>
+    </article>
+  </section>
+
+  <section class="rowB">
+    <article class="panel chart" aria-label="Measured temperature against the twin, with residual and CUSUM">
+      <div class="eyebrow">Measured against the physics twin <small id="c-note"></small></div>
+      <div class="cwrap"><svg id="chart" role="img" aria-label="Three stacked charts on one time axis: measured and predicted temperature, the residual in standard deviations, and the CUSUM statistic with its threshold. Alarms mark where the physics checks fired."></svg></div>
+      <div class="key" id="c-key"></div>
+    </article>
+
+    <article class="panel chain" aria-label="Signed record chain">
+      <div class="eyebrow">Signed record chain <small id="ch-note"></small></div>
+      <div class="ribbon" id="ribbon" role="img" aria-label="A row of linked record tokens. Tokens before the broken one are verified; the broken one is cracked; the ones after it are not verified."></div>
+      <div class="scale" id="scale"></div>
+      <div class="res" id="res"></div>
+      <div class="tamper">
+        <span class="guard" role="img" aria-label="Guarded control, style only"><svg class="hold" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-dasharray="14 62" stroke-linecap="round"/><circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-opacity="0.3" stroke-width="2.4"/><use href="#i-lock" x="9" y="9" width="14" height="14"/></svg>Hold to tamper with a copy</span>
+        <small>Edits a COPY of the ledger and re-verifies it; the original is never changed.</small>
+      </div>
+    </article>
+  </section>
+
+  <section class="panel rec" aria-label="Recommendation">
+    <div>
+      <div class="eyebrow">Planner: expected loss and worst-5% loss <small id="p-note"></small></div>
+      <div class="atable" id="atable"></div>
+      <div class="legend"><span><i style="background:var(--ice-400)"></i>Expected loss</span><span><i style="background:var(--planner)"></i>Worst 5% (CVaR)</span><span><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Recommended</span><span><svg class="ic" aria-hidden="true"><use href="#i-diamond"/></svg>Lowest expected loss</span></div>
+    </div>
+    <div>
+      <div class="eyebrow">Why this needs a person</div>
+      <ul class="reasons" id="reasons"></ul>
+    </div>
+    <div class="route-box">
+      <h3 id="rec-h"></h3>
+      <span class="chip bad" id="route-chip"></span>
+      <p id="rec-p"></p>
+      <div class="acts"><button class="btn" type="button" disabled>Approve</button><button class="btn" type="button" disabled>Override</button><button class="btn" type="button" disabled>Reject</button></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const NS = "http://www.w3.org/2000/svg";
+const f0 = (n) => Math.round(n).toLocaleString("en-US");
+const f1 = (n) => n.toFixed(1), f2 = (n) => n.toFixed(2);
+const NAME = { continue: "Continue", expedite: "Expedite", reroute_to_depot: "Reroute to depot", re_source: "Re-source", quarantine: "Quarantine" };
+const use = (id, cls = "ic") => `<svg class="${cls}" aria-hidden="true"><use href="#${id}"/></svg>`;
+const sv = (name, attrs = {}, parent) => { const e = document.createElementNS(NS, name); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+
+fetch("data/control_room.json").then((r) => r.json()).then(async (d) => {
+  await Promise.all([document.fonts.load("600 24px 'PG Display A'"), document.fonts.load("500 24px 'PG Mono A'"), document.fonts.load("500 14px 'PG UI A'")]);
+  fill(d);
+}).catch((e) => { document.body.insertAdjacentHTML("afterbegin", `<p style="padding:2rem;color:#FF8A7A">Could not read data/control_room.json (${e}). Serve this folder with a local web server: python -m http.server 8809 --bind 127.0.0.1</p>`); });
+
+function fill(d) {
+  const n = d.now, p = d.planner, ch = d.chain, dec = d.decision;
+  const total = d.checkpoint_h + n.remaining_h, frac = d.checkpoint_h / total;
+
+  // top bar: scenario chips are a styling placeholder (the final build lists the featured scenarios)
+  const names = ["baseline_ok", "door_open_excursion", "reefer_failure", "spoof_attempt", "hidden_spoilage"];
+  $("#scen").innerHTML = names.map((s, i) => `<button class="btn" type="button" aria-pressed="${s === d.provenance.scenario_id}"><kbd>${i + 1}</kbd>${s}</button>`).join("");
+  const pb = $("#prov-btn"), pv = $("#prov");
+  const toggle = () => { const o = pv.dataset.open !== "true"; pv.dataset.open = o; pb.setAttribute("aria-expanded", o); };
+  pb.addEventListener("click", toggle);
+  addEventListener("keydown", (e) => { if (e.key === "p" || e.key === "P") toggle(); if (e.key === "Escape") { pv.dataset.open = "false"; pb.setAttribute("aria-expanded", "false"); } });
+  const P = d.provenance;
+  $("#prov-list").innerHTML = [
+    ["Data source", P.source + " (simulated sensor feed)"], ["Scenario id", P.scenario_id], ["Origin", P.from_replay ? "Replay of a recording" : "Live"],
+    ["Enterprise adapter", P.sap_adapter_mode], ["Software version", P.software_version], ["Planner seed", P.planner_seed], ["Twin time constant", f2(P.twin_tau_h) + " h"], ["Recording", d.recording],
+  ].map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
+
+  // shipment
+  $("#s-id").textContent = d.provenance.scenario_id;
+  $("#s-prog").textContent = `${f1(d.checkpoint_h)} of ${f1(total)} h`;
+  $("#s-bar").style.width = (frac * 100).toFixed(1) + "%";
+  $("#s-chips").innerHTML =
+    `<span class="chip warn">${use("i-shield")}${dec.shipment_status.replaceAll("_", " ")}</span>` +
+    `<span class="chip bad">${use("i-warn")}Trust: ${n.trust_level}</span>` +
+    `<span class="chip mute">${use("i-dot")}Verdict: ${n.verdict.replaceAll("_", " ")}</span>`;
+  // globe placeholder
+  const dots = $("#dots"); let a = 7; const rnd = () => ((a = (a * 1664525 + 1013904223) >>> 0) / 4294967296);
+  for (let i = 0; i < 220; i++) sv("circle", { cx: (rnd() * 900).toFixed(0), cy: (30 + rnd() * 220).toFixed(0), r: (0.8 + rnd() * 1.1).toFixed(1), opacity: (0.2 + rnd() * 0.4).toFixed(2) }, dots);
+  const path = $("#done"), L = path.getTotalLength(); path.setAttribute("stroke-dasharray", `${L * frac} ${L}`);
+  const pt = path.getPointAtLength(L * frac); $("#marker").setAttribute("transform", `translate(${pt.x} ${pt.y})`);
+
+  // ring and figures (all from the JSON)
+  const C = 2 * Math.PI * 88, C2 = 2 * Math.PI * 68, rep = n.potency_percent_reported_by_pipeline / 100, worst = n.worst_case_potency_percent / 100;
+  $("#ring-rep").setAttribute("stroke-dasharray", `${C * rep} ${C}`);
+  $("#ring-worst").setAttribute("stroke-dasharray", `${C2 * worst} ${C2}`);
+  $("#r-pot").innerHTML = f2(n.potency_percent_reported_by_pipeline) + "<small>%</small>";
+  $("#figs").innerHTML = [
+    ["Worst-case potency", f1(n.worst_case_potency_percent), "%", "warn"], ["Shelf life used, reported", f2(n.shelf_life_used_percent), "%", ""],
+    ["Shelf life used, worst case", f0(n.worst_case_shelf_life_used_percent), "%", "bad"], ["Box temperature now", f2(n.temp_c), "°C", ""],
+    ["Mean kinetic temperature", f2(n.mkt_c), "°C", ""], ["Ambient now", f1(n.ambient_c), "°C", ""],
+  ].map(([l, v, u, c]) => `<div class="fig ${c}"><label>${l}</label><b>${v}<small>${u}</small></b></div>`).join("") +
+    `<div class="note">Synthetic product, model output. Outer ring: reported by the sensor feed. Inner ring: worst case, because the readings are ${n.trust_level}.</div>`;
+
+  ribbon(ch, d); recommend(p, dec); chart(d);
+  let t; new ResizeObserver(() => { clearTimeout(t); t = setTimeout(() => chart(d), 60); }).observe($(".cwrap"));
+}
+
+function chart(d) {
+  const svg = $("#chart"), box = svg.parentElement.getBoundingClientRect(), W = Math.max(600, box.width), H = Math.max(180, box.height);
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("preserveAspectRatio", "xMidYMid meet"); svg.innerHTML = "";
+  const s = d.series, L = 52, R = 14, FS = Math.max(11, Math.min(15.5, H / 18)), x = (h) => L + (h / d.checkpoint_h) * (W - L - R);
+  const axis = FS + 18, usable = H - axis, gap = Math.max(12, Math.min(22, H * 0.075));
+  const hs = [usable * 0.5, usable * 0.24, usable * 0.26].map((v) => v - gap * 0.66);
+  const strips = []; let yy = Math.max(8, FS * 0.7); hs.forEach((h) => { strips.push({ y: yy, h }); yy += h + gap; });
+  const labels = ["Temperature, \u00b0C", "Residual, \u03c3", "CUSUM"];
+  const sigma = d.now.sigma_r_c, hth = d.now.cusum_h, mono = "'PG Mono A', monospace", ui = "'PG UI A', sans-serif";
+  const temps = s.map((r) => r.temp_c).concat(s.filter((r) => r.twin_c != null).map((r) => r.twin_c));
+  const t0 = Math.floor(Math.min(...temps) / 5) * 5, t1 = Math.ceil(Math.max(...temps) / 5) * 5;
+  const y0 = (v) => strips[0].y + strips[0].h - ((v - t0) / (t1 - t0)) * strips[0].h;
+  const rc = (v) => Math.max(-12, Math.min(12, v)), y1 = (v) => strips[1].y + strips[1].h / 2 - (rc(v) / 12) * (strips[1].h / 2);
+  const yc = (v) => strips[2].y + strips[2].h - (Math.min(v, hth * 2) / (hth * 2)) * strips[2].h;
+  const text = (t, a) => { const e = sv("text", a, svg); e.textContent = t; return e; };
+  const grid = (ticks, yf, fmt) => ticks.forEach((t) => { sv("line", { x1: L, x2: W - R, y1: yf(t), y2: yf(t), stroke: "#1B2A44", "stroke-width": 1 }, svg); text(fmt(t), { x: L - 8, y: yf(t) + 5, "text-anchor": "end", fill: "#A9BAD1", "font-size": FS - 1.5, "font-family": mono }); });
+  const tt = []; for (let v = t0; v <= t1; v += 5) tt.push(v);
+  grid(tt, y0, (v) => v); grid([-10, 0, 10], y1, (v) => v); grid([0, hth], yc, (v) => v);
+  for (let h = 0; h <= d.checkpoint_h; h += 10) { text(h + " h", { x: x(h), y: H - 3, "text-anchor": h === 0 ? "start" : h === d.checkpoint_h ? "end" : "middle", fill: "#A9BAD1", "font-size": FS - 1.5, "font-family": mono }); sv("line", { x1: x(h), x2: x(h), y1: strips[0].y, y2: strips[2].y + strips[2].h, stroke: "#111b2e", "stroke-width": 1 }, svg); }
+  const area = s.map((r) => `${x(r.t_h).toFixed(1)},${yc(r.cusum_neg).toFixed(1)}`);
+  sv("polygon", { points: `${x(0)},${yc(0)} ${area.join(" ")} ${x(d.checkpoint_h)},${yc(0)}`, fill: "rgba(255,138,122,0.2)" }, svg);
+  const line = (key, fn, a) => sv("polyline", { points: s.filter((r) => r[key] != null).map((r) => `${x(r.t_h).toFixed(1)},${fn(r[key]).toFixed(1)}`).join(" "), fill: "none", "stroke-linejoin": "round", ...a }, svg);
+  line("twin_c", y0, { stroke: "#A9BAD1", "stroke-width": 2.2, "stroke-dasharray": "7 5" });
+  line("temp_c", y0, { stroke: "#5DD6FF", "stroke-width": 2.8 });
+  sv("line", { x1: L, x2: W - R, y1: y1(0), y2: y1(0), stroke: "#5E7899", "stroke-width": 1 }, svg);
+  sv("polyline", { points: s.filter((r) => r.residual_c != null).map((r) => `${x(r.t_h).toFixed(1)},${y1(r.residual_c / sigma).toFixed(1)}`).join(" "), fill: "none", stroke: "#E8F4FF", "stroke-width": 1.8 }, svg);
+  sv("line", { x1: L, x2: W - R, y1: yc(hth), y2: yc(hth), stroke: "#FF8A7A", "stroke-dasharray": "6 4", "stroke-width": 1.6 }, svg);
+  line("cusum_neg", yc, { stroke: "#FF8A7A", "stroke-width": 2.6 });
+  strips.forEach((st, i) => text(labels[i], { x: L + 8, y: st.y + FS + 2, fill: "#E8F4FF", "font-size": FS, "font-weight": 600, "font-family": ui }));
+  // alarms that fired within half an hour of each other share one mark and one label
+  const A = d.first_alarm_h, names = { impossible_step: "impossible step", cusum_neg: "CUSUM", impossible_state: "impossible state" };
+  const first = Math.min(...Object.values(A));
+  const group = Object.entries(A).filter(([, v]) => v - first < 0.5).map(([k]) => names[k]);
+  sv("line", { x1: x(first), x2: x(first), y1: strips[0].y, y2: strips[2].y + strips[2].h, stroke: "#FF8A7A", "stroke-width": 1.8, "stroke-dasharray": "3 3" }, svg);
+  sv("path", { d: `M${x(first)} ${strips[0].y + 3} l8 8 l-8 8 l-8 -8 z`, fill: "#FF8A7A" }, svg);
+  text(`Physics checks fired at ${first.toFixed(1)} h`, { x: x(first) + 16, y: strips[0].y + 18, fill: "#FF8A7A", "font-size": FS, "font-weight": 600, "font-family": ui });
+  text(group.join(", "), { x: x(first) + 16, y: strips[0].y + 18 + FS + 3, fill: "#FF8A7A", "font-size": FS - 1.5, "font-family": ui });
+  $("#c-note").textContent = `${d.recording.split("/").pop()}, first ${d.checkpoint_h} h`;
+  $("#c-key").innerHTML = `<span><svg viewBox="0 0 26 10"><path d="M0 5h26" stroke="#5DD6FF" stroke-width="3"/></svg>Measured by the sensor feed</span><span><svg viewBox="0 0 26 10"><path d="M0 5h26" stroke="#A9BAD1" stroke-width="2.4" stroke-dasharray="6 4"/></svg>Twin prediction, one step ahead</span><span><svg viewBox="0 0 26 10"><path d="M0 5h26" stroke="#FF8A7A" stroke-width="2.4" stroke-dasharray="4 3"/></svg>Alarm threshold, h = ${hth}</span><span style="color:#FF8A7A">${use("i-diamond")}</span><span>Physics check fired</span>`;
+}
+
+function ribbon(ch, d) {
+  const bi = ch.ribbon.findIndex((t) => t.status === "broken"), r = ch.ribbon.slice(Math.max(0, bi - 8), bi + 9), host = $("#ribbon"); host.innerHTML = "";
+  r.forEach((t, i) => {
+    const cls = t.status === "verified" ? "v" : t.status === "broken" ? "b" : "a", icon = cls === "v" ? "i-check" : cls === "b" ? "i-crack" : "i-dash";
+    if (i) host.insertAdjacentHTML("beforeend", `<span class="link ${cls === "v" ? "" : cls}"></span>`);
+    host.insertAdjacentHTML("beforeend", `<span class="tok ${cls}" title="entry ${t.index}, hash ${t.hash_prefix}">${use(icon)}</span>`);
+  });
+  $("#scale").innerHTML = `<span>entry ${r[0].index}</span><span>entry ${ch.first_broken_index}</span><span>entry ${r[r.length - 1].index}</span>`;
+  $("#ch-note").textContent = `${ch.entries_total} entries, key ${ch.key_id}`;
+  $("#res").innerHTML =
+    `<div><span style="color:var(--verify)">${use("i-check")}</span><span>Original ledger: <span class="num">${ch.intact_result}</span></span></div>` +
+    `<div><span style="color:var(--danger-text)">${use("i-crack")}</span><span>Edited copy: <span class="num">${ch.tampered_result}</span></span></div>` +
+    `<div><span style="color:var(--mist-hi)">${use("i-dot")}</span><span>${ch.tamper[0].toUpperCase() + ch.tamper.slice(1)}. Entries after the break are not verified.</span></div>`;
+}
+
+function recommend(p, dec) {
+  const rows = p.table, maxv = Math.max(...rows.map((r) => r.cvar));
+  $("#atable").innerHTML = `<div class="vhead"><span></span><span></span><span><span>expected</span><span>worst 5%</span></span></div>` + rows.map((r) => {
+    const w1 = (r.expected_loss / maxv) * 100, w2 = (r.cvar / maxv) * 100, pick = r.action === p.cvar_optimal, exp = r.action === p.expected_optimal;
+    const icon = pick ? use("i-check") : exp ? use("i-diamond") : '<span style="width:.9rem;flex:none"></span>';
+    return `<div class="arow"><div class="name ${pick ? "pick" : ""}">${icon}${NAME[r.action]}</div>
+      <div class="pair"><div class="b1"><i style="width:${w1}%"></i></div><div class="b2"><i style="width:${w2}%"></i></div></div>
+      <div class="vals"><span class="e">${f0(r.expected_loss)}</span><span class="c">${f0(r.cvar)}</span></div></div>`;
+  }).join("");
+  $("#p-note").textContent = `${f0(p.n_scenarios)} scenarios, alpha ${p.alpha}`;
+  const rs = dec.reasons, shown = rs.slice(0, 4);
+  $("#reasons").innerHTML = shown.map((t) => `<li>${use("i-user")}<span>${t.replace(/^rule (\d): /, "Rule $1: ")}</span></li>`).join("") + (rs.length > shown.length ? `<li class="more">+ ${rs.length - shown.length} more in the decision record</li>` : "");
+  $("#rec-h").innerHTML = `Recommended: <b>${NAME[dec.chosen_action]}</b>`;
+  $("#route-chip").innerHTML = `${use("i-user")}A person must decide`;
+  $("#rec-p").textContent = `${dec.close_call ? "Close call: " + NAME[p.cvar_optimal] + " and " + NAME[p.expected_optimal] + " are almost tied. " : ""}${p.disagree ? "The average-loss view would pick " + NAME[p.expected_optimal] + ". " : ""}The planner recommends; quality assurance decides.`;
+}
+</script>
+</body>
+</html>

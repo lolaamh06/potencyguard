@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PotencyGuard: font pairing comparison (F1)</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="fonts.css">
+<style>
+  body { background: radial-gradient(1200px 700px at 50% -10%, #0c1830 0%, var(--void) 60%); min-height: 100vh; padding: var(--s-6) clamp(var(--s-4), 3vw, var(--s-8)) var(--s-7); }
+  header { max-width: 1500px; margin: 0 auto var(--s-6); }
+  header h1 { font-family: var(--font-display); font-weight: 400; font-size: var(--t-h2); line-height: 1.05; margin: 0 0 var(--s-3); }
+  header p { color: var(--mist-hi); max-width: 70ch; margin: 0; font-size: var(--t-body); }
+  .grid { max-width: 1500px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: var(--s-5); }
+  .card { background: var(--ink-900); border-radius: var(--r-3); box-shadow: var(--elev-1); padding: var(--s-5) var(--s-5) var(--s-6); display: flex; flex-direction: column; gap: var(--s-4); }
+  .card.rec { box-shadow: 0 0 0 1px var(--ice-400), var(--glow-ice); }
+  .tag { display: inline-flex; align-items: center; gap: var(--s-2); font-family: var(--font-ui); font-size: var(--t-caption); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ice-300); }
+  .tag.alt { color: var(--mist-hi); }
+  .tag svg { width: 14px; height: 14px; }
+  h2 { margin: 0; font-family: var(--font-ui); font-size: var(--t-lead); font-weight: 600; color: var(--frost); }
+  .names { margin: calc(var(--s-2) * -1) 0 0; color: var(--mist-hi); font-size: var(--t-small); font-family: var(--font-ui); }
+  .display { font-family: var(--font-display); font-weight: 400; font-size: var(--t-h2); line-height: 1.04; letter-spacing: -0.01em; margin: var(--s-2) 0 0; }
+  .display b { font-weight: 600; color: var(--planner-300); }
+  .lede { font-family: var(--font-display); font-size: var(--t-lead); line-height: 1.35; color: var(--frost); margin: 0; }
+  .body { font-family: var(--font-ui); font-size: var(--t-body); color: var(--mist-hi); margin: 0; line-height: 1.6; }
+  .body strong { color: var(--frost); font-weight: 600; }
+  .label { font-family: var(--font-ui); font-weight: 500; font-size: var(--t-caption); letter-spacing: 0.1em; text-transform: uppercase; color: var(--mist-hi); }
+  .nums { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4) var(--s-5); padding-top: var(--s-4); border-top: 1px solid var(--line); }
+  .nums div { display: flex; flex-direction: column; gap: var(--s-1); }
+  .big { font-family: var(--font-mono); font-weight: 500; font-size: clamp(2rem, 1.2rem + 2.2vw, 3.5rem); line-height: 1; font-variant-numeric: tabular-nums slashed-zero; color: var(--frost); }
+  .big.v { color: var(--planner-300); }
+  .big small { font-size: 0.45em; color: var(--mist-hi); margin-left: 0.2em; }
+  .mini { font-family: var(--font-mono); font-size: var(--t-small); color: var(--mist-hi); font-variant-numeric: tabular-nums slashed-zero; line-height: 1.7; }
+  .ui { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+  .chip { font-family: var(--font-ui); font-weight: 500; font-size: var(--t-small); padding: var(--s-1) var(--s-3); border-radius: var(--r-pill); border: 1px solid var(--line-strong); color: var(--frost); display: inline-flex; gap: var(--s-2); align-items: center; }
+  .chip.ok { color: var(--verify); border-color: var(--verify); }
+  .chip.bad { color: var(--danger-text); border-color: var(--danger-text); }
+  .verdict { margin-top: auto; padding-top: var(--s-4); border-top: 1px solid var(--line); font-family: var(--font-ui); font-size: var(--t-small); color: var(--mist-hi); }
+  .verdict b { color: var(--frost); font-weight: 600; }
+  section.table { max-width: 1500px; margin: var(--s-6) auto 0; }
+  table { width: 100%; border-collapse: collapse; font-family: var(--font-ui); font-size: var(--t-small); }
+  th, td { text-align: left; padding: var(--s-2) var(--s-3); border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--mist-hi); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; font-size: var(--t-caption); }
+  td.n { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  footer { max-width: 1500px; margin: var(--s-5) auto 0; color: var(--mist-hi); font-size: var(--t-small); }
+</style>
+</head>
+<body>
+<header>
+  <h1>One display voice, one reading voice, one data voice.</h1>
+  <p>Three open-licence pairings (SIL OFL 1.1), self-hosted, rendered with the same sample text. Display is for story headlines, UI for body and labels, mono with tabular figures for every number. Pairing A is the recommendation; B and C are the alternatives. The four large numbers below are the textbook example from the project brief, read from data/futures.json (illustrative placeholders, not sourced).</p>
+</header>
+
+<main class="grid" id="cards" aria-label="Font pairings"></main>
+
+<section class="table" aria-labelledby="t-h">
+  <h2 id="t-h" style="margin-bottom: var(--s-3)">Files, versions and licences</h2>
+  <table>
+    <thead><tr><th>Family</th><th>Fontsource package</th><th>Version</th><th>Licence</th><th style="text-align:right">Files</th><th style="text-align:right">Bytes</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <footer id="foot"></footer>
+</section>
+
+<script>
+// Pairing content is data; the numbers come from data/futures.json (generated by the project's planner code).
+const PAIRINGS = [
+  { key: "A", rec: true,  title: "Pairing A: Fraunces, Inter, JetBrains Mono", names: "Display Fraunces 400 / 600; UI Inter 400 / 500 / 600; data JetBrains Mono 400 / 500",
+    verdict: "<b>Why:</b> the vision's default. Fraunces gives the headlines warmth and weight without looking like a magazine template; Inter is neutral and very legible on a projector; JetBrains Mono has clear zeros and tall figures." },
+  { key: "B", title: "Pairing B: Newsreader, IBM Plex Sans, IBM Plex Mono", names: "Display Newsreader 400 / 600; UI IBM Plex Sans 400 / 500 / 600; data IBM Plex Mono 400 / 500",
+    verdict: "<b>Why not first choice:</b> the calmest and most editorial of the three, with one design family behind UI and data. Its figures are a little lighter at a distance." },
+  { key: "C", title: "Pairing C: Instrument Serif, Instrument Sans, DM Mono", names: "Display Instrument Serif 400 and italic; UI Instrument Sans 400 / 500 / 600; data DM Mono 400 / 500",
+    verdict: "<b>Why not first choice:</b> the most distinctive display face (narrow and elegant), but it only has one weight, so emphasis must come from italic or colour; DM Mono is rounder and less tall." }
+];
+const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h !== undefined) e.innerHTML = h; return e; };
+const fmt = (n) => Math.round(n).toLocaleString("en-US");
+Promise.all([fetch("data/futures.json").then(r => r.json()), fetch("fonts/manifest.json").then(r => r.json())]).then(([f, m]) => {
+  const x = f.exact, host = document.getElementById("cards");
+  for (const p of PAIRINGS) {
+    const c = el("article", "card" + (p.rec ? " rec" : "")); c.dataset.pairing = p.key;
+    c.innerHTML = `
+      <span class="tag ${p.rec ? "" : "alt"}">${p.rec ? '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7.5l3.2 3.2L12 3.8" fill="none" stroke="currentColor" stroke-width="2"/></svg>Recommended' : '<svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>Alternative'}</span>
+      <h2>${p.title}</h2><p class="names">${p.names}</p>
+      <p class="display">The average says continue. The worst five percent says <b>reroute.</b></p>
+      <p class="lede">Potency, physics and proof, computed where the medicine is.</p>
+      <p class="body">A logger can be shielded, swapped or replayed. <strong>A signature proves a record was not edited.</strong> It cannot prove the sensor told the truth, but a box obeys physics, and data that does not obey it gets flagged.</p>
+      <div class="ui"><span class="chip">Hold to arm</span><span class="chip ok">&#10003; Chain verified</span><span class="chip bad">&#9888; Link 150 broken</span></div>
+      <div class="nums">
+        <div><span class="label">Expected loss, Continue</span><span class="big">${fmt(x.continue.expected_loss)}</span></div>
+        <div><span class="label">Worst 5 percent, Continue</span><span class="big v">${fmt(x.continue.cvar)}</span></div>
+        <div><span class="label">Expected loss, Reroute</span><span class="big">${fmt(x.reroute.expected_loss)}</span></div>
+        <div><span class="label">Worst 5 percent, Reroute</span><span class="big v">${fmt(x.reroute.cvar)}</span></div>
+      </div>
+      <div class="mini">0123456789 &nbsp;0.00 &nbsp;1,000 &nbsp;&minus;12.5 &deg;C<br>Glyph check: I1l O0 &sigma; &Delta; &rarr; &#10003;</div>
+      <p class="verdict">${p.verdict}</p>`;
+    host.appendChild(c);
+  }
+  const rows = document.getElementById("rows");
+  for (const font of m.fonts) {
+    const tr = el("tr", "", `<td>${font.family}</td><td>${font.package}</td><td class="n">${font.version}</td><td>${font.license}</td><td class="n">${font.files.length}</td><td class="n">${font.bytes.toLocaleString("en-US")}</td>`);
+    rows.appendChild(tr);
+  }
+  document.getElementById("foot").textContent = `Total ${m.total_bytes.toLocaleString("en-US")} bytes of Latin-subset WOFF2 across all three pairings. ${m.note} Licence texts are in fonts/LICENSE-*.txt.`;
+});
+</script>
+</body>
+</html>

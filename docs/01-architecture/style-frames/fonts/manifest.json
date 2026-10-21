@@ -1,0 +1,171 @@
+{
+ "note": "Fetched with npm in a scratch folder outside the repository (%LOCALAPPDATA%\\potencyguard\font-work); Latin subset, only the weights used.",
+ "fonts": [
+  {
+   "family": "DM Mono",
+   "package": "@fontsource/dm-mono",
+   "version": "5.3.0",
+   "license": "OFL-1.1",
+   "files": [
+    {
+     "file": "dm-mono-latin-400-normal.woff2",
+     "bytes": 14820
+    },
+    {
+     "file": "dm-mono-latin-500-normal.woff2",
+     "bytes": 14988
+    }
+   ],
+   "bytes": 29808
+  },
+  {
+   "family": "Fraunces",
+   "package": "@fontsource/fraunces",
+   "version": "5.3.0",
+   "license": "OFL-1.1",
+   "files": [
+    {
+     "file": "fraunces-latin-400-normal.woff2",
+     "bytes": 17968
+    },
+    {
+     "file": "fraunces-latin-600-normal.woff2",
+     "bytes": 18096
+    }
+   ],
+   "bytes": 36064
+  },
+  {
+   "family": "IBM Plex Mono",
+   "package": "@fontsource/ibm-plex-mono",
+   "version": "5.3.0",
+   "license": "OFL-1.1",
+   "files": [
+    {
+     "file": "ibm-plex-mono-latin-400-normal.woff2",
+     "bytes": 14708
+    },
+    {
+     "file": "ibm-plex-mono-latin-500-normal.woff2",
+     "bytes": 14888
+    }
+   ],
+   "bytes": 29596
+  },
+  {
+   "family": "IBM Plex Sans",
+   "package": "@fontsource/ibm-plex-sans",
+   "version": "5.3.0",
+   "license": "OFL-1.1",
+   "files": [
+    {
+     "file": "ibm-plex-sans-latin-400-normal.woff2",
+     "bytes": 22588
+    },
+    {
+     "file": "ibm-plex-sans-latin-500-normal.woff2",
+     "bytes": 24184
+    },
+    {
+     "file": "ibm-plex-sans-latin-600-normal.woff2",
+     "bytes": 24252
+    }
+   ],
+   "bytes": 71024
+  },
+  {
+   "family": "Instrument Sans",
+   "package": "@fontsource/instrument-sans",
+   "version": "5.3.0",
+   "license": "OFL-1.1",
+   "files": [
+    {
+     "file": "instrument-sans-latin-400-normal.woff2",
+     "bytes": 16860
+    },
+    {
+     "file": "instrument-sans-latin-500-normal.woff2",
+     "bytes": 17232
+    },
+    {
+     "file": "instrument-sans-latin-600-normal.woff2",
+     "bytes": 17408
+    }
+   ],
+   "bytes": 51500
+  },
+  {
+   "family": "Instrument Serif",
+   "package": "@fontsource/instrument-serif",
+   "version": "5.3.0",
+   "license": "OFL-1.1",
+   "files": [
+    {
+     "file": "instrument-serif-latin-400-italic.woff2",
+     "bytes": 22128
+    },
+    {
+     "file": "instrument-serif-latin-400-normal.woff2",
+     "bytes": 21032
+    }
+   ],
+   "bytes": 43160
+  },
+  {
+   "family": "Inter",
+   "package": "@fontsource/inter",
+   "version": "5.3.0",
+   "license": "OFL-1.1",
+   "files": [
+    {
+     "file": "inter-latin-400-normal.woff2",
+     "bytes": 23664
+    },
+    {
+     "file": "inter-latin-500-normal.woff2",
+     "bytes": 24272
+    },
+    {
+     "file": "inter-latin-600-normal.woff2",
+     "bytes": 24452
+    }
+   ],
+   "bytes": 72388
+  },
+  {
+   "family": "JetBrains Mono",
+   "package": "@fontsource/jetbrains-mono",
+   "version": "5.3.0",
+   "license": "OFL-1.1",
+   "files": [
+    {
+     "file": "jetbrains-mono-latin-400-normal.woff2",
+     "bytes": 21168
+    },
+    {
+     "file": "jetbrains-mono-latin-500-normal.woff2",
+     "bytes": 21832
+    }
+   ],
+   "bytes": 43000
+  },
+  {
+   "family": "Newsreader",
+   "package": "@fontsource/newsreader",
+   "version": "5.3.0",
+   "license": "OFL-1.1",
+   "files": [
+    {
+     "file": "newsreader-latin-400-normal.woff2",
+     "bytes": 22480
+    },
+    {
+     "file": "newsreader-latin-600-normal.woff2",
+     "bytes": 23876
+    }
+   ],
+   "bytes": 46356
+  }
+ ],
+ "total_bytes": 422896
+}

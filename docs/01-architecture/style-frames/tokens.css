@@ -1,0 +1,81 @@
+/* PotencyGuard design tokens (Phase F1). One source of truth for the style frames.
+   Colours are the vision's palette plus the semantic additions in docs/01-architecture/design-system.md.
+   Contrast ratios of every text/background pair are in data/contrast.json (computed, not estimated). */
+:root {
+  /* surfaces */
+  --void: #04070d;
+  --ink-900: #070c16;
+  --ink-800: #0b1220;
+  --ink-700: #111b2e;
+  --line: #1b2a44;          /* decorative hairline only */
+  --line-strong: #5e7899;   /* borders of controls and chart axes (3:1 or better) */
+
+  /* text */
+  --frost: #e8f4ff;         /* primary text */
+  --mist-hi: #a9bad1;       /* secondary text (7:1 on every surface) */
+  --mist: #8fa3bf;          /* tertiary, large text only on ink-700 */
+
+  /* meaning */
+  --ice-400: #5dd6ff;       /* cold, safe, primary accent */
+  --ice-300: #9be7ff;
+  --ice-700: #14506b;       /* fills behind cold data */
+  --ember-400: #ffb347;     /* warning */
+  --ember-500: #ff7a3d;     /* heat */
+  --ember-600: #ff3d2e;     /* danger fill and graphics */
+  --danger-text: #ff8a7a;   /* danger or tamper text */
+  --verify: #3df2b1;        /* verified chain, approvals */
+  --planner: #8b7cff;       /* planner fill and graphics */
+  --planner-300: #b7aeff;   /* planner text */
+
+  /* fonts: pairing A is the default; fonts-compare.html switches pairings with data-pairing */
+  --font-display: "PG Display A", "Iowan Old Style", Georgia, serif;
+  --font-ui: "PG UI A", system-ui, "Segoe UI", sans-serif;
+  --font-mono: "PG Mono A", ui-monospace, Consolas, monospace;
+
+  /* type scale, fluid from a phone to 4K (clamp(min, preferred, max)) */
+  --t-caption: clamp(0.75rem, 0.72rem + 0.12vw, 0.875rem);
+  --t-small: clamp(0.8125rem, 0.78rem + 0.15vw, 0.9375rem);
+  --t-body: clamp(0.9375rem, 0.9rem + 0.2vw, 1.125rem);
+  --t-lead: clamp(1.125rem, 1rem + 0.5vw, 1.5rem);
+  --t-h3: clamp(1.25rem, 1.05rem + 0.9vw, 2rem);
+  --t-h2: clamp(1.75rem, 1.2rem + 2.2vw, 3.5rem);
+  --t-h1: clamp(2.25rem, 1.2rem + 4.2vw, 6rem);
+  --t-number: clamp(2.5rem, 1.5rem + 3.6vw, 6.5rem);
+
+  /* spacing (4 px base) */
+  --s-1: 0.25rem; --s-2: 0.5rem; --s-3: 0.75rem; --s-4: 1rem; --s-5: 1.5rem;
+  --s-6: 2rem; --s-7: 3rem; --s-8: 4.5rem; --s-9: 7rem;
+
+  /* radii */
+  --r-1: 4px; --r-2: 8px; --r-3: 14px; --r-pill: 999px;
+
+  /* elevation and glow: elevation is a hairline plus a dark shadow; glow is reserved for meaning */
+  --elev-1: 0 0 0 1px var(--line), 0 6px 24px rgba(0, 0, 0, 0.45);
+  --elev-2: 0 0 0 1px var(--line-strong), 0 14px 48px rgba(0, 0, 0, 0.6);
+  --glow-ice: 0 0 24px rgba(93, 214, 255, 0.45);
+  --glow-verify: 0 0 20px rgba(61, 242, 177, 0.4);
+  --glow-planner: 0 0 22px rgba(139, 124, 255, 0.5);
+  --glow-danger: 0 0 22px rgba(255, 61, 46, 0.5);
+
+  /* motion: story moves are long and calm, control-room feedback is short */
+  --d-instant: 120ms; --d-quick: 220ms; --d-ui: 360ms; --d-story: 900ms; --d-slow: 1400ms;
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);   /* like power3.inOut: story moves */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);     /* arrivals */
+  --ease-in: cubic-bezier(0.64, 0, 0.78, 0);      /* departures */
+  --ease-linear: linear;                          /* scrubbed values only */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --d-story: 1ms; --d-slow: 1ms; --d-ui: 1ms; --d-quick: 1ms; --d-instant: 1ms; }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { color-scheme: dark; }
+body {
+  margin: 0; background: var(--void); color: var(--frost);
+  font-family: var(--font-ui); font-size: var(--t-body); line-height: 1.5;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums slashed-zero; font-feature-settings: "tnum" 1, "zero" 1; }
+:focus-visible { outline: 2px solid var(--ice-300); outline-offset: 3px; border-radius: var(--r-1); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
