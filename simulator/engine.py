@@ -87,6 +87,8 @@ class BoxEngine:
         self.compressor_on = self.true_temp_c > box.box_setpoint_c + self._half_band
         self.n = 0
         self.reported_history: list[float] = []
+        # Phase 3B: state of each mimic liar's healthy copy of the box, keyed by spoof event id.
+        self._mimic: dict[str, list] = {}
 
     @property
     def now_s(self) -> float:
@@ -142,6 +144,36 @@ class BoxEngine:
             self.true_temp_c = step_with_decay(self.true_temp_c, t_inf, self._decay)
         self._last_duty = on_substeps / self._n_sub
 
+    def _mimic_c(self, spoof: EventRecord, t_s: float, true_c: float) -> float:
+        """Temperature of the attacker's healthy copy of the box at sample time t_s.
+
+        The copy starts from the true temperature at the first sample the spoof is active, then
+        advances one sample interval per call with cooling_factor 1.0, no heat loads, the real
+        ambient temperature (including any real ambient events) and its OWN hysteresis controller
+        and compressor state. It consumes no random numbers, so nothing else changes.
+        """
+        state = self._mimic.get(spoof.id)
+        if state is None:
+            state = self._mimic[spoof.id] = [
+                true_c,
+                true_c > self._box.box_setpoint_c + self._half_band,
+            ]
+            return state[0]
+        box = self._box
+        t_from_s = t_s - self.sample_interval_s
+        temp, on = state
+        for k in range(self._n_sub):
+            sub_s = t_from_s + k * self._dt_s
+            if temp > box.box_setpoint_c + self._half_band:
+                on = True
+            elif temp < box.box_setpoint_c - self._half_band:
+                on = False
+            cooling_w = -box.box_cooling_capacity_w if on else 0.0
+            t_inf = steady_state_temp_c(self._ambient_c(sub_s), box.box_R_th_k_per_w, cooling_w)
+            temp = step_with_decay(temp, t_inf, self._decay)
+        state[0], state[1] = temp, on
+        return temp
+
     def step(self) -> tuple[SensorReading, TruthSample]:
         """Advance one sample and return what the sensor reported and what was really true."""
         if self.n > 0:
@@ -172,6 +204,12 @@ class BoxEngine:
                 reported = spoof.params["reported_c"] + noise
             elif spoof_mode == "offset":
                 reported = true_c - spoof.params["delta_c"] + noise
+            elif spoof_mode == "drift":
+                offset = spoof.params["rate_c_per_h"] * (t_s - spoof.start_s) / 3600.0
+                offset = min(offset, spoof.params.get("max_offset_c", math.inf))
+                reported = true_c - offset + noise
+            elif spoof_mode == "mimic":
+                reported = self._mimic_c(spoof, t_s, true_c) + noise
             else:
                 length_s = spoof.params["replay_len_h"] * 3600.0
                 into_s = (t_s - spoof.start_s) % length_s

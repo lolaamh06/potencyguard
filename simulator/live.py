@@ -250,6 +250,12 @@ class LiveSimulator:
             return InjectionResult(True, ended[-1].id, f"cooling restored from t={now_s:.0f} s")
         elif type_ == "open_door":
             power = parsed.power_w if parsed.power_w is not None else self._box.door_default_power_w
+            if power > self._box.door_max_power_w:
+                return InjectionResult(
+                    False,
+                    error=f"open_door: power_w {power:g} is above the largest allowed door power "
+                    f"({self._box.door_max_power_w:g} W)",
+                )
             params = {"power_w": power, "rh_delta_pct": 0.0}
             record = self._new_record(
                 type_, KIND_HEAT, now_s, now_s + parsed.duration_min * 60.0, params
@@ -267,7 +273,14 @@ class LiveSimulator:
                 )
             self._end_open(KIND_SPOOF, now_s)
             params = {"mode": parsed.mode}
-            for name in ("reported_c", "delta_c", "replay_from_h", "replay_len_h"):
+            for name in (
+                "reported_c",
+                "delta_c",
+                "replay_from_h",
+                "replay_len_h",
+                "rate_c_per_h",
+                "max_offset_c",
+            ):
                 if getattr(parsed, name) is not None:
                     params[name] = getattr(parsed, name)
             params["add_noise"] = (

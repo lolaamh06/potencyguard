@@ -1,4 +1,8 @@
-"""Commands that show the thermal twin at work: python -m edge twin ... and ... calibrate."""
+"""Commands that show the thermal twin at work: python -m edge twin ... and ... calibrate.
+
+Phase 3B: the view also shows whether the reported data are trusted and, when they are not, the
+worst-case bound on the damage (edge/assessment.py).
+"""
 
 from __future__ import annotations
 
@@ -7,11 +11,17 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from edge.assessment import PotencyAssessment, TrustAssessor, WorstCaseBound
 from edge.calibration import calibrate_from_recordings, write_calibrated_config
-from edge.potency import PotencyState, PotencyTracker
+from edge.potency import PotencyState
 from edge.recorded_source import RecordedSource
 from edge.sensor_reading import SensorReading
-from edge.tamper_monitor import FALSIFICATION, MonitorState, TamperMonitor, sigma_units
+from edge.tamper_monitor import (
+    FALSIFICATION,
+    MonitorState,
+    TamperMonitor,
+    sigma_units,
+)
 from edge.thermal_twin import DEFAULT_TWIN_PATH
 from shared.config import REPO_ROOT, BoxConfig, ProductConfig
 
@@ -38,6 +48,8 @@ class TwinAnalysis:
     potency: list[PotencyState]
     monitor: TamperMonitor
     first_divergence_s: float | None
+    assessments: list[PotencyAssessment]
+    bound: WorstCaseBound | None
 
     def detection_delay_s(self) -> float | None:
         """Seconds from the first divergence to the first falsification verdict at or after it."""
@@ -55,13 +67,15 @@ def analyse(path: Path | str, product: ProductConfig, box: BoxConfig) -> TwinAna
     source = RecordedSource(recording)
     source.start()
     monitor = TamperMonitor.from_defaults(product, box)
-    tracker = PotencyTracker(product)
-    readings, states, potency = [], [], []
+    assessor = TrustAssessor(product, monitor)
+    readings, states, potency, assessments = [], [], [], []
     try:
         while (reading := source.read()) is not None:
             readings.append(reading)
-            states.append(monitor.update(reading))
-            potency.append(tracker.update(reading))
+            assessment, potency_state, monitor_state = assessor.update(reading)
+            states.append(monitor_state)
+            potency.append(potency_state)
+            assessments.append(assessment)
     finally:
         source.close()
     header = source.header
@@ -78,6 +92,8 @@ def analyse(path: Path | str, product: ProductConfig, box: BoxConfig) -> TwinAna
         potency,
         monitor,
         divergence,
+        assessments,
+        assessor.last_bound,
     )
 
 
@@ -155,11 +171,90 @@ def print_recording(analysis: TwinAnalysis, out, verbose: bool) -> None:
             f" ({delay / analysis.interval_s:.0f} samples)",
             file=out,
         )
+    print_trust(analysis, out)
     print(f"\n{FOOTER}", file=out)
 
 
+def trust_summary(analysis: TwinAnalysis) -> str:
+    """Short trust text for the one-line view."""
+    final = analysis.assessments[-1]
+    if final.trusted:
+        return "trusted"
+    if final.trust_level == "low_confidence":
+        return f"low confidence from {final.untrusted_since_s / 3600.0:.1f} h"
+    return f"untrusted from {final.untrusted_since_s / 3600.0:.1f} h"
+
+
+def print_trust(analysis: TwinAnalysis, out) -> None:
+    """Is the reported data trusted, is the twin in date, and what is the worst case?"""
+    final = analysis.assessments[-1]
+    state = analysis.states[-1]
+    print("\nTrust:", file=out)
+    print(f"  trust level     {final.trust_level}", file=out)
+    if final.trusted:
+        print("  reported data   trusted (no evidence against them)", file=out)
+    elif final.trust_level == "low_confidence":
+        print(
+            f"  reported data   LOW CONFIDENCE since hour {final.untrusted_since_s / 3600.0:.2f}"
+            f" ({final.trust_reason})",
+            file=out,
+        )
+        print(f"  {final.operator_message}", file=out)
+    else:
+        print(
+            f"  reported data   NOT trusted since hour {final.untrusted_since_s / 3600.0:.2f}"
+            f" ({final.trust_reason})",
+            file=out,
+        )
+    if state.twin_out_of_date:
+        start = " from the first window" if state.out_of_date_from_start else ""
+        print(
+            f"  twin            out of date{start}: the box differs from the calibration", file=out
+        )
+    elif analysis.monitor.self_check_off:
+        print(
+            "  twin            self-check switched off (a physical proof of falsification was "
+            "found)",
+            file=out,
+        )
+    elif state.gain is None:
+        print("  twin            in date (gain not measurable: too little variation)", file=out)
+    else:
+        print(
+            f"  twin            in date (gain {state.gain:.2f}, "
+            f"drift {state.drift_c_per_h:+.2f} K per hour)",
+            file=out,
+        )
+    reported = final.reported_shelf_life_used_fraction * 100.0
+    if final.trusted:
+        print(f"  shelf life used {reported:.1f} percent (reported)", file=out)
+        return
+    if final.trust_level == "low_confidence":
+        print(
+            f"  reported (low confidence): {reported:.1f} percent of shelf life used;"
+            " no worst-case bound is given (it needs a twin that matches the box)",
+            file=out,
+        )
+        return
+    print(f"  reported (untrusted): {reported:.1f} percent of shelf life used", file=out)
+    bound = analysis.bound
+    print(
+        f"  worst case from hour {bound.t0_h:.2f}: at most "
+        f"{bound.shelf_life_used_fraction * 100.0:.1f} percent of shelf life used",
+        file=out,
+    )
+    print(
+        "  (the bound assumes no cooling at all after that hour and an honest ambient reading;"
+        " it is an upper bound, not an estimate)",
+        file=out,
+    )
+
+
 def print_all(folder: Path, product: ProductConfig, box: BoxConfig, out) -> None:
-    print(f"{'recording':<22}{'verdicts (in order)':<58}{'divergence':>12}{'delay':>10}", file=out)
+    print(
+        f"{'recording':<22}{'verdicts (in order)':<58}{'divergence':>12}{'delay':>10}  trust",
+        file=out,
+    )
     for path in sorted(folder.glob("*.jsonl")):
         analysis = analyse(path, product, box)
         delay = analysis.detection_delay_s()
@@ -167,7 +262,7 @@ def print_all(folder: Path, product: ProductConfig, box: BoxConfig, out) -> None
         print(
             f"{analysis.scenario_id:<22}{verdict_summary(analysis):<58}"
             f"{_hour(analysis.first_divergence_s) if analysis.first_divergence_s else '-':>12}"
-            f"{delay_text:>10}",
+            f"{delay_text:>10}  {trust_summary(analysis)}",
             file=out,
         )
     print(f"\n{FOOTER}", file=out)
@@ -211,6 +306,7 @@ __all__ = [
     "DEFAULT_TWIN_PATH",
     "analyse",
     "print_all",
+    "print_trust",
     "print_recording",
     "run_calibrate",
 ]

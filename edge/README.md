@@ -39,3 +39,16 @@ $py = "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe"
 ```
 
 `twin` replays a recording through the monitor and the potency tracker together and prints the verdicts, the first alarm of each detector and, from the ground-truth file, the detection delay. Simulation results on a synthetic box.
+
+## Twin out of date, trust and the worst-case bound (Phase 3B)
+
+- `tamper_monitor.py` now also fits `y = g * x + b * dt_h` over a rolling window (x the change the twin predicts, y the change observed). A box that differs from the calibration shows a gain `g` away from 1 with no jump; the monitor then reports the verdict `twin_out_of_date` and stops turning a CUSUM alarm into a tamper verdict. Hard physical proofs (a jump that stays, the impossible state, a flat line) are never suppressed. The monitor also keeps `untrusted_since_s`, the time from which the reported data are doubtful.
+- `assessment.py`: `worst_case_bound()` is an UPPER BOUND on the damage since that time (no cooling at all, the honest ambient channel, one heat allowance), `assess()` combines it with the reported potency into a `PotencyAssessment`, and `TrustAssessor` does it one reading at a time. It never uses ground truth.
+
+```
+$py = "$env:LOCALAPPDATA\potencyguard\venv\Scripts\python.exe"
+& $py -m edge twin --recording data/recordings/hidden_spoilage.jsonl
+& $py -m edge twin --all
+```
+
+`twin --recording` now prints a Trust block: whether the data are trusted, whether the twin is in date, and, when they are not trusted, the reported shelf life used next to "worst case from hour t0: at most X percent of shelf life used". `twin --all` adds a trust column. The bound is deliberately pessimistic: it assumes the cooling unit did nothing after t0, so it can be far above the true value when the cooling in fact worked.

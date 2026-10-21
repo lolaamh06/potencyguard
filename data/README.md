@@ -5,3 +5,7 @@
 - `calibration/` holds the ten clean recordings used only to fit the thermal twin (`python -m simulator generate-calibration`, seeds 9001 to 9010); a test checks they match a fresh generation and that they are never evaluation data.
 - Runs with other seeds and free runs go to `runs/` by default. Generated outputs go in `generated/` and `runs/`, which are git-ignored.
 - Filled in by: Phase 1 onward.
+
+## Phase 3B
+
+No recording changed: the two new lie modes are used by no shipped scenario, and the nine golden recordings are byte-identical to the Phase 3 ones (`tests/test_lie_modes.py` regenerates each and compares the bytes). `data/generated/evaluation_3b.json` (git-ignored) holds the numbers behind `docs/02-phase-reports/phase-03b-evaluation.md`.

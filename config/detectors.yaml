@@ -19,8 +19,18 @@ cusum_false_alarm_target_per_1000h: 1.0
 # Impossible-step detector: tolerance added to the physical step bound, in residual std deviations.
 step_tolerance_sigma: 5.0
 
-# Heat that cannot be observed (a door held open) can pull the box temperature up faster than
-# ambient alone; this design allowance, in kelvin above ambient, widens the step bound's warm end.
+# MEANING: the largest sudden warming of the box, in kelvin, that an unseen heat load can cause in
+# one sample interval. The twin cannot observe such a load (a door held open), so the impossible-
+# step bound's warm end is raised by this amount above ambient.
+# DERIVATION (simulator-matching value): a heat load of P watts through the wall resistance R_th
+# can pull the box towards at most R_th * P kelvin above where it would otherwise settle, so in
+# any single interval it cannot add more than that:
+#     heat_allowance_c = box_R_th_k_per_w * door_max_power_w = 0.5 K/W * 120 W = 60 K
+# door_max_power_w (config/product_default.yaml) is the largest door power the injectable
+# open_door command accepts, and the largest any shipped scenario uses. A test asserts that this
+# value is at least R_th * door_max_power_w and at most 1.5 times that, so it stays tied to the
+# simulator. It is a design allowance for THIS synthetic box; a real box needs its own value.
+# placeholder, not sourced [SOURCE NEEDED]
 heat_allowance_c: 60.0
 
 # Impossible-state detector: the reported temperature is below the lag-aware lower envelope (the
@@ -37,3 +47,25 @@ falsification_hold_samples: 6
 # below flat_sigma_factor times the sensor noise standard deviation.
 flat_window_samples: 18
 flat_sigma_factor: 0.3
+
+# ---------------------------------------------------------------------------------------------
+# Phase 3B: the "twin out of date" self-check. Every value is
+# placeholder, not sourced [SOURCE NEEDED]; tuned on the TRAINING seeds only (decision 0006).
+# ---------------------------------------------------------------------------------------------
+# The monitor fits  y = g * x + b * dt_h  over a rolling window, where x is the change the twin
+# predicts for one interval and y the change that was observed. A box that differs from the
+# calibration shows a gain g away from 1, with no jump. Window length in samples:
+ood_window_samples: 72
+# The verdict twin_out_of_date needs |g - 1| above this margin ...
+ood_gain_margin: 0.08
+# ... with g inside this plausible band (outside it the shape is not a mismatch) ...
+ood_gain_band_low: 0.5
+ood_gain_band_high: 2.0
+# ... for this many window evaluations in a row (and it clears after as many back inside).
+ood_sustained_samples: 6
+# The gain is only judged when it can be measured: its standard error must not exceed this.
+ood_max_gain_se: 0.04
+
+# When the monitor declares the reported data untrusted, the worst-case bound starts this many
+# samples before the first evidence, so a lie that began before it was noticed is covered.
+trust_lookback_samples: 6

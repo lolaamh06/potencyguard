@@ -24,13 +24,15 @@ def test_box_config_loads_placeholder_values(box):
     assert box.heat_capacity_j_per_k == pytest.approx(box.box_tau_h * 3600 / box.box_R_th_k_per_w)
 
 
-@pytest.mark.parametrize("key", ["box_deadband_c", "sim_substep_s", "door_default_power_w"])
+@pytest.mark.parametrize(
+    "key", ["box_deadband_c", "sim_substep_s", "door_default_power_w", "door_max_power_w"]
+)
 def test_box_config_rejects_non_positive_new_keys(key, tmp_path):
     text = (
         "box_R_th_k_per_w: 0.5\nbox_tau_h: 6\nbox_setpoint_c: 5\nbox_cooling_capacity_w: 60\n"
         "sensor_sigma_c: 0.05\nsensor_sigma_rh_pct: 0.5\nsensor_sigma_shock_g: 0.01\n"
         "box_deadband_c: 0.8\nsim_substep_s: 60\ndoor_default_power_w: 100\n"
-        "sensor_sigma_ambient_c: 0.1\ndetect_divergence_c: 1.0\n"
+        "sensor_sigma_ambient_c: 0.1\ndetect_divergence_c: 1.0\ndoor_max_power_w: 120\n"
     )
     good = tmp_path / "good.yaml"
     good.write_text(text, encoding="utf-8")

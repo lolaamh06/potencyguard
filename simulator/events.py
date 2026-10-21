@@ -143,43 +143,85 @@ class AmbientOffsetEvent(_Strict):
         return self
 
 
-class SpoofEvent(_Strict):
-    """The reported temperature is falsified. Modes: hold, offset, replay."""
+SPOOF_MODES = ("hold", "offset", "replay", "drift", "mimic")
+_SPOOF_PARAMETERS = (
+    "reported_c",
+    "delta_c",
+    "replay_from_h",
+    "replay_len_h",
+    "rate_c_per_h",
+    "max_offset_c",
+)
+# Phase 3B parameters. They are left out of dumps while unset, so every older event (and every
+# golden recording that records its events) keeps exactly the bytes it had before they existed.
+_PHASE_3B_PARAMETERS = ("rate_c_per_h", "max_offset_c")
+_SPOOF_REQUIRED = {
+    "hold": {"reported_c"},
+    "offset": {"delta_c"},
+    "replay": {"replay_from_h", "replay_len_h"},
+    "drift": {"rate_c_per_h"},
+    "mimic": set(),
+}
+_SPOOF_OPTIONAL = {"drift": {"max_offset_c"}}
 
-    type: Literal["spoof"]
-    start_h: float = Field(ge=0)
-    end_h: float
-    mode: Literal["hold", "offset", "replay"]
+
+def _check_spoof_parameters(model: _Strict) -> None:
+    """Each spoof mode takes exactly its own parameters (plus the optional ones listed)."""
+    needed = _SPOOF_REQUIRED[model.mode]  # type: ignore[attr-defined]
+    allowed = needed | _SPOOF_OPTIONAL.get(model.mode, set())  # type: ignore[attr-defined]
+    given = {name for name in _SPOOF_PARAMETERS if getattr(model, name) is not None}
+    if not needed <= given or not given <= allowed:
+        raise ValueError(
+            f"spoof mode {model.mode!r} needs exactly {sorted(needed)}"  # type: ignore[attr-defined]
+            + (f" and may add {sorted(allowed - needed)}" if allowed - needed else "")
+            + f" (got {sorted(given)})"
+        )
+
+
+class _SpoofFields(_Strict):
+    """Fields shared by the scheduled and the injectable spoof."""
+
+    mode: Literal["hold", "offset", "replay", "drift", "mimic"]
     reported_c: float | None = Field(default=None, ge=TEMP_MIN_C, le=TEMP_MAX_C)
     delta_c: float | None = None
     replay_from_h: float | None = Field(default=None, ge=0)
     replay_len_h: float | None = Field(default=None, gt=0)
+    # drift: the offset grows linearly from 0 at the start, in kelvin per hour, up to max_offset_c
+    rate_c_per_h: float | None = Field(default=None, gt=0, allow_inf_nan=False)
+    max_offset_c: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     add_noise: bool | None = None
+
+    def model_dump(self, **kwargs):  # type: ignore[override]
+        data = super().model_dump(**kwargs)
+        for name in _PHASE_3B_PARAMETERS:
+            if data.get(name, 0) is None:
+                del data[name]
+        return data
+
+
+class SpoofEvent(_SpoofFields):
+    """The reported temperature is falsified. Modes: hold, offset, replay, drift, mimic.
+
+    drift: reported = true - offset, offset = rate_c_per_h * hours since the start, capped at
+    max_offset_c when given. mimic: the reported value follows a healthy copy of the box (an
+    attacker with a model of the box); it needs no parameters.
+    """
+
+    type: Literal["spoof"]
+    start_h: float = Field(ge=0)
+    end_h: float
 
     @model_validator(mode="after")
     def _mode_parameters(self) -> SpoofEvent:
         _check_window(self.start_h, self.end_h)
-        needed = {
-            "hold": {"reported_c"},
-            "offset": {"delta_c"},
-            "replay": {"replay_from_h", "replay_len_h"},
-        }[self.mode]
-        given = {
-            name
-            for name in ("reported_c", "delta_c", "replay_from_h", "replay_len_h")
-            if getattr(self, name) is not None
-        }
-        if given != needed:
-            raise ValueError(
-                f"spoof mode {self.mode!r} needs exactly {sorted(needed)} (got {sorted(given)})"
-            )
+        _check_spoof_parameters(self)
         if self.mode == "replay" and self.replay_from_h + self.replay_len_h > self.start_h:
             raise ValueError("replayed period must end before the spoof starts")
         return self
 
     @property
     def noise_enabled(self) -> bool:
-        """Noise is added to hold and offset by default, and to replay only when asked."""
+        """Noise is added to every mode by default, except replay (only when asked)."""
         if self.add_noise is None:
             return self.mode != "replay"
         return self.add_noise
@@ -236,6 +278,7 @@ class RestoreCooling(_Strict):
 class OpenDoor(_Strict):
     type: Literal["open_door"]
     duration_min: float = Field(gt=0)
+    # Larger than the configured door_max_power_w is rejected by LiveSimulator.inject().
     power_w: float | None = Field(default=None, gt=0)
 
 
@@ -260,32 +303,13 @@ class ColdSnap(_Soak):
     delta_c: float = Field(lt=0)
 
 
-class SpoofSensor(_Strict):
+class SpoofSensor(_SpoofFields):
     type: Literal["spoof_sensor"]
-    mode: Literal["hold", "offset", "replay"]
-    reported_c: float | None = Field(default=None, ge=TEMP_MIN_C, le=TEMP_MAX_C)
-    delta_c: float | None = None
-    replay_from_h: float | None = Field(default=None, ge=0)
-    replay_len_h: float | None = Field(default=None, gt=0)
     duration_min: float | None = Field(default=None, gt=0)
-    add_noise: bool | None = None
 
     @model_validator(mode="after")
     def _mode_parameters(self) -> SpoofSensor:
-        needed = {
-            "hold": {"reported_c"},
-            "offset": {"delta_c"},
-            "replay": {"replay_from_h", "replay_len_h"},
-        }[self.mode]
-        given = {
-            name
-            for name in ("reported_c", "delta_c", "replay_from_h", "replay_len_h")
-            if getattr(self, name) is not None
-        }
-        if given != needed:
-            raise ValueError(
-                f"spoof mode {self.mode!r} needs exactly {sorted(needed)} (got {sorted(given)})"
-            )
+        _check_spoof_parameters(self)
         return self
 
 

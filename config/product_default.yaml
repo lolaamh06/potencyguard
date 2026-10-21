@@ -152,3 +152,14 @@ sensor_sigma_ambient_c: 0.1
 # placeholder, not sourced [SOURCE NEEDED]: a spoof counts as "diverged" from the first sample at
 # which the reported and the true temperature differ by more than this many C.
 detect_divergence_c: 1.0
+
+# ---------------------------------------------------------------------------
+# Phase 3B additions. Every value below is
+# placeholder, not sourced [SOURCE NEEDED].
+# ---------------------------------------------------------------------------
+
+# placeholder, not sourced [SOURCE NEEDED]: the largest heat entering the box through an open door,
+# in watts. The injectable open_door command rejects a larger power_w. Every shipped scenario
+# stays at or below it (the largest is 120 W). The step detector's heat_allowance_c in
+# config/detectors.yaml is derived from it: heat_allowance_c = box_R_th_k_per_w * door_max_power_w.
+door_max_power_w: 120

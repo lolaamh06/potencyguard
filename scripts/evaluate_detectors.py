@@ -1,21 +1,29 @@
-"""Measure the tamper detectors with the real simulator, monitor and calibration (Phase 3).
+"""Measure the tamper detectors with the real simulator, monitor and calibration (Phases 3, 3B).
 
 Run from the repo root:  python scripts/evaluate_detectors.py [--quick]
+Phase 3B adds: the drift and mimic lie families, the "twin out of date" verdict and its threshold
+sweep (training seeds only), the worst-case damage bound, and a before/after comparison with the
+Phase 3 behaviour (the same code with the self-check switched off).
 
 Seed blocks (disjoint; asserted below and in the tests):
   calibration  9001 to 9010    used only to fit the twin
-  training    10001 to 10100   used only to choose the CUSUM settings (the sweep)
-  test        20001 to 20200   used only for the final scoring
+  training    10001 to 10100   used only to choose the CUSUM settings and the ood settings
+  development 20001 to 20200   scored once in Phase 3B; its seed 20090 exposed a bound violation,
+                               so it was used for DIAGNOSIS and is no longer a final block
+  validity    30001 to 30200   used to validate the first bound-start repair: development as well
+  final       40001 to 40200   final scoring of the bound-start fix; no tuning, no diagnosis
 
 Everything is a simulation result on a synthetic box. The twin and the simulator use the same
 family of equations, so the final scoring is repeated against boxes that differ from the
 calibration (mismatch runs).
 """
+# ruff: noqa: E501  (report text lines)
 
 from __future__ import annotations
 
 import argparse
 import dataclasses
+import functools
 import json
 import statistics
 import sys
@@ -29,9 +37,17 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from edge.detector_config import load_detector_config  # noqa: E402
+from edge.assessment import TrustAssessor  # noqa: E402
+from edge.detector_config import DetectorConfig, load_detector_config  # noqa: E402
+from edge.potency import arrhenius_acceleration_factor  # noqa: E402
 from edge.sensor_reading import SensorReading  # noqa: E402
-from edge.tamper_monitor import FALSIFICATION, GLITCH, THERMAL_ANOMALY, TamperMonitor  # noqa: E402
+from edge.tamper_monitor import (  # noqa: E402
+    FALSIFICATION,
+    GLITCH,
+    OUT_OF_DATE,
+    THERMAL_ANOMALY,
+    TamperMonitor,
+)
 from edge.thermal_twin import load_twin_params  # noqa: E402
 from shared.config import BoxConfig, ProductConfig, load_box_config, load_product_config  # noqa: E402, E501
 from simulator.calibration_set import CALIBRATION_SEEDS  # noqa: E402
@@ -41,20 +57,52 @@ from simulator.live import LiveSimulator  # noqa: E402
 from simulator.scenario import load_all_scenarios  # noqa: E402
 from simulator.truth import TruthSample  # noqa: E402
 
-DEFAULT_MARKDOWN = REPO_ROOT / "docs" / "02-phase-reports" / "phase-03-evaluation.md"
-DEFAULT_JSON = REPO_ROOT / "data" / "generated" / "evaluation.json"
+DEFAULT_MARKDOWN = REPO_ROOT / "docs" / "02-phase-reports" / "phase-03b-evaluation.md"
+DEFAULT_JSON = REPO_ROOT / "data" / "generated" / "evaluation_3b.json"
 FOOTER = "Simulation result on a synthetic box. Not real-world evidence."
 
 TRAIN_SEEDS = list(range(10001, 10101))
-TEST_SEEDS = list(range(20001, 20201))
+DEVELOPMENT_SEEDS = list(range(20001, 20201))
+VALIDITY_DEV_SEEDS = list(range(30001, 30201))
+FINAL_SEEDS = list(range(40001, 40201))
+TEST_SEEDS = FINAL_SEEDS  # the final scoring block (the name is kept for the tests that sample it)
+SEED_LEDGER = (
+    ("calibration", "9001 to 9010", "fit the twin", "calibration only"),
+    ("training", "10001 to 10100", "chose CUSUM settings and the out-of-date settings", "tuning"),
+    (
+        "development",
+        "20001 to 20200",
+        "scored the first Phase 3B build; seed 20090 showed a bound violation",
+        "diagnosis (no longer unseen)",
+    ),
+    (
+        "validity (development)",
+        "30001 to 30200",
+        "validated the first bound-start repair (both statistics quiet)",
+        "diagnosis (no longer unseen)",
+    ),
+    (
+        "final",
+        "40001 to 40200",
+        "scores the episode-latched bound start; mismatch runs use the first 100",
+        "final scoring, used once",
+    ),
+)
 QUICK_COUNT = 5
 MISMATCH_SWEEP_SEEDS = 30  # training seeds used for the informational mismatch columns of the sweep
 MISMATCH_COUNT = 100  # seeds per family in the mismatch runs (the first ones of the test block)
 SWEEP_K = (0.25, 0.5, 1.0)
 SWEEP_H = (4.0, 8.0, 12.0)
+OOD_SWEEP_MISMATCH_SEEDS = 40  # training seeds per family on the +/-15% boxes in the ood sweep
+OOD_SWEEP_WINDOWS = (36, 72, 144)
+OOD_SWEEP_MARGINS = (0.06, 0.08, 0.10)
+OOD_SWEEP_SUSTAINED = (6, 12, 24)
+OOD_FALSE_TARGET = 0.02  # largest share of nominal-box clean and physical runs that may go ood
+OOD_LIE_LOSS_TARGET = 0.01  # largest drop in any nominal lie family's detection rate
+DRIFT_RATES = (0.25, 0.5, 1.0, 2.0)
 assert not set(CALIBRATION_SEEDS) & set(TRAIN_SEEDS)
-assert not set(CALIBRATION_SEEDS) & set(TEST_SEEDS)
-assert not set(TRAIN_SEEDS) & set(TEST_SEEDS)
+_BLOCKS = [CALIBRATION_SEEDS, TRAIN_SEEDS, DEVELOPMENT_SEEDS, VALIDITY_DEV_SEEDS, FINAL_SEEDS]
+assert sum(len(set(b)) for b in _BLOCKS) == len(set().union(*map(set, _BLOCKS)))
 
 DETECTORS = ("cusum_pos", "cusum_neg", "impossible_step", "impossible_state", "flat_line")
 FLAG_OF = {
@@ -131,9 +179,11 @@ def _injected_family(
         readings, truth = [], []
         while True:
             if not injected and sim.engine.next_sample_s >= at_s:
-                result = sim.inject(event(rng, sim.engine.now_s))
-                if not result.accepted:
-                    raise RuntimeError(f"injection rejected: {result.error}")
+                commands = event(rng, sim.engine.now_s)
+                for command in commands if isinstance(commands, list) else [commands]:
+                    result = sim.inject(command)
+                    if not result.accepted:
+                        raise RuntimeError(f"injection rejected: {result.error}")
                 injected = True
             reading, sample = sim.step()
             if reading is None or sample is None:
@@ -211,26 +261,109 @@ def build_families() -> dict[str, Family]:
     return {f.name: f for f in families}
 
 
+def build_lie_families() -> dict[str, Family]:
+    """Phase 3B lies: slow drifts and a knowledgeable liar (the mimic). All are tamper families.
+
+    injected_drift_R_clean   baseline_ok, no physical fault, the drift starts at a random time
+    injected_drift_R_fault   reefer_failure, the cooling fault is already active when it starts
+    injected_mimic_at_failure  baseline_ok, the cooling is killed and the mimic starts together
+    injected_mimic_late      reefer_failure, the mimic starts hours after the cooling failed
+    """
+    families = []
+    for rate in DRIFT_RATES:
+        for variant, base, hours in (
+            ("clean", "baseline_ok", (8.0, 36.0)),
+            ("fault", "reefer_failure", (16.0, 24.0)),
+        ):
+            families.append(
+                _injected_family(
+                    f"injected_drift_{rate:g}_{variant}",
+                    "tamper",
+                    FALSIFICATION,
+                    base,
+                    hours,
+                    lambda _rng, _now, rate=rate: {
+                        "type": "spoof_sensor",
+                        "mode": "drift",
+                        "rate_c_per_h": rate,
+                    },
+                )
+            )
+    families.append(
+        _injected_family(
+            "injected_mimic_at_failure",
+            "tamper",
+            FALSIFICATION,
+            "baseline_ok",
+            (8.0, 36.0),
+            lambda _rng, _now: [
+                {"type": "kill_cooling"},
+                {"type": "spoof_sensor", "mode": "mimic"},
+            ],
+        )
+    )
+    families.append(
+        _injected_family(
+            "injected_mimic_late",
+            "tamper",
+            FALSIFICATION,
+            "reefer_failure",
+            (16.0, 24.0),
+            lambda _rng, _now: {"type": "spoof_sensor", "mode": "mimic"},
+        )
+    )
+    return {f.name: f for f in families}
+
+
+LIE_FAMILIES_PHASE3 = (
+    "spoof_attempt",
+    "hidden_spoilage",
+    "injected_offset",
+    "injected_offset_small",
+    "injected_replay",
+)
+CLEAN_NAMES = ("baseline_ok", "shock_drop", "sensor_glitch", "freeze_event")
+PHYSICAL_NAMES = ("door_open_excursion", "reefer_failure", "heatwave_transit")
+
+
+@functools.lru_cache(maxsize=1)
+def _product() -> ProductConfig:
+    return load_product_config()
+
+
 # ----------------------------------------------------------------------------- scoring one run
+
+
+def _true_tau_eq_h(run: RunData, t0_s: float, product: ProductConfig) -> float:
+    """tau_eq of the TRUE temperatures after t0 (scoring only; the monitor never sees truth)."""
+    dt_h = run.interval_s / 3600.0
+    index = round(t0_s / run.interval_s)
+    return sum(
+        arrhenius_acceleration_factor(sample.true_temp_c, product) * dt_h
+        for sample in run.truth[index + 1 :]
+    )
 
 
 def score_run(
     run: RunData, family: Family, monitor: TamperMonitor
 ) -> dict[str, float | int | bool | None]:
     """Run the monitor over one run and return plain scoring numbers."""
-    monitor.reset()
+    product = _product()
+    assessor = TrustAssessor(product, monitor)
+    assessor.reset()
     ref_s = {
         "tamper": run.divergence_s,
         "physical": run.physical_start_s,
     }.get(family.kind, 0.0)
     first_after: dict[str, float | None] = {name: None for name in DETECTORS}
     verdict_first: dict[str, float | None] = {
-        v: None for v in (FALSIFICATION, THERMAL_ANOMALY, GLITCH)
+        v: None for v in (FALSIFICATION, THERMAL_ANOMALY, GLITCH, OUT_OF_DATE)
     }
-    episodes = {FALSIFICATION: 0, THERMAL_ANOMALY: 0}
+    episodes = {FALSIFICATION: 0, THERMAL_ANOMALY: 0, OUT_OF_DATE: 0}
     previous = "ok"
+    state = None
     for reading in run.readings:
-        state = monitor.update(reading)
+        _, _, state = assessor.update(reading)
         if ref_s is not None and state.t_s >= ref_s:
             for name, attr in FLAG_OF.items():
                 if first_after[name] is None and getattr(state, attr):
@@ -242,7 +375,35 @@ def score_run(
         previous = state.verdict
     hours = (run.readings[-1].t_s - run.readings[0].t_s) / 3600.0
     anywhere = {v for _, v in monitor.verdict_history}
+    bound = assessor.last_bound
+    trust: dict[str, float | int | bool | str | None] = {
+        "untrusted": state.untrusted_since_s is not None,
+        "untrusted_reason": state.untrusted_reason,
+        "trust_level": state.trust_level,
+        "untrusted_since_s": state.untrusted_since_s,
+        "ood_from_start": monitor.out_of_date_from_start,
+        "bound_computed": bound is not None,
+        "bound_valid": None,
+        "bound_tau_h": None,
+        "true_tau_h": None,
+        "bound_ratio": None,
+        "bound_start_before_divergence_s": None,
+    }
+    if bound is not None:
+        true_tau = _true_tau_eq_h(run, bound.t0_s, product)
+        trust["bound_tau_h"] = bound.tau_eq_from_t0_h
+        trust["true_tau_h"] = true_tau
+        trust["bound_valid"] = bound.tau_eq_from_t0_h >= true_tau - 1e-9
+        trust["bound_ratio"] = bound.tau_eq_from_t0_h / true_tau if true_tau > 0 else None
+        if run.divergence_s is not None:
+            trust["bound_start_before_divergence_s"] = run.divergence_s - bound.t0_s
     return {
+        **trust,
+        "final_verdict": previous,
+        "final_ood": previous == OUT_OF_DATE,
+        "any_ood": OUT_OF_DATE in anywhere,
+        "ood_episodes": episodes[OUT_OF_DATE],
+        "first_ood": verdict_first[OUT_OF_DATE],
         "hours": hours,
         "divergence_s": run.divergence_s,
         "ref_s": ref_s,
@@ -271,6 +432,26 @@ def _stats(values: Sequence[float], interval_s: float) -> dict[str, float | None
     }
 
 
+def _count(values: Sequence[str]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for value in values:
+        counts[value] = counts.get(value, 0) + 1
+    return counts
+
+
+def _bound_summary(rows: Sequence[dict]) -> dict:
+    """How often the worst-case bound was computed and valid, and how conservative it was."""
+    computed = [r for r in rows if r["bound_computed"]]
+    ratios = [r["bound_ratio"] for r in computed if r["bound_ratio"] is not None]
+    return {
+        "computed": len(computed),
+        "valid": sum(bool(r["bound_valid"]) for r in computed),
+        "ratio_median": float(np.median(ratios)) if ratios else None,
+        "ratio_p90": float(np.percentile(ratios, 90)) if ratios else None,
+        "ratio_max": float(np.max(ratios)) if ratios else None,
+    }
+
+
 def evaluate_family(
     family: Family, seeds: Sequence[int], box: BoxConfig, monitor: TamperMonitor
 ) -> dict:
@@ -294,8 +475,24 @@ def evaluate_family(
         "runs_with_anomaly_verdict": sum(r["any_anomaly"] for r in rows),
         "runs_with_glitch_verdict": sum(r["any_glitch"] for r in rows),
         "runs_with_divergence": sum(r["divergence_s"] is not None for r in rows),
+        "runs_ended_with_tamper": sum(r["final_falsification"] for r in rows),
+        "runs_with_ood_verdict": sum(r["any_ood"] for r in rows),
+        "runs_ended_ood": sum(r["final_ood"] for r in rows),
+        "runs_ood_from_start": sum(bool(r["ood_from_start"]) for r in rows),
+        "runs_untrusted": sum(r["untrusted"] for r in rows),
+        "runs_level_untrusted": sum(r["trust_level"] == "untrusted" for r in rows),
+        "runs_level_low_confidence": sum(r["trust_level"] == "low_confidence" for r in rows),
+        "violations": [
+            seed
+            for seed, r in zip(seeds, rows, strict=True)
+            if r["bound_computed"] and not r["bound_valid"]
+        ],
+        "bound": _bound_summary(rows),
+        "final_verdicts": _count([r["final_verdict"] for r in rows]),
     }
     if family.kind == "tamper":
+        flagged = [r for r in rows if r["divergence_s"] is not None and r["untrusted"]]
+        result["flagged_untrusted_rate"] = len(flagged) / n
         found = [r["first_falsification"] for r in rows if r["first_falsification"] is not None]
         result["detection_rate"] = len(found) / n
         result["correct_class_rate"] = len(found) / n
@@ -477,12 +674,179 @@ def summarise_boxes(
                 )
             ),
             "false_by_family": {e["family"]: e["runs_with_tamper_verdict"] for e in notamper},
+            "no_tamper_runs": sum(e["runs"] for e in notamper),
+            "false_tamper_ended": sum(e["runs_ended_with_tamper"] for e in notamper),
+            "ood_verdict_runs": sum(e["runs_with_ood_verdict"] for e in notamper),
+            "ood_ended_runs": sum(e["runs_ended_ood"] for e in notamper),
+            "ood_from_start_runs": sum(e["runs_ood_from_start"] for e in notamper),
+            "untrusted_runs": sum(e["runs_untrusted"] for e in notamper),
+            "false_ended_by_family": {e["family"]: e["runs_ended_with_tamper"] for e in notamper},
+            "ood_by_family": {e["family"]: e["runs_with_ood_verdict"] for e in notamper},
             "control_runs_with_tamper_verdict": (
                 None if control is None else control["runs_with_tamper_verdict"]
             ),
             "families": evaluated,
         }
     return out
+
+
+# ----------------------------------------------------------------------------- the ood sweep
+
+
+def phase3_config(config: DetectorConfig) -> DetectorConfig:
+    """The Phase 3 behaviour: the self-check can never judge the gain, so it never fires."""
+    return config.model_copy(update={"ood_max_gain_se": 1e-12})
+
+
+def _light_score(monitor: TamperMonitor, run: RunData, kind: str) -> dict[str, bool]:
+    """The few facts the ood sweep needs from one run (no trust or bound bookkeeping)."""
+    monitor.reset()
+    detected = ood = tamper = False
+    previous = "ok"
+    for reading in run.readings:
+        state = monitor.update(reading)
+        previous = state.verdict
+        ood = ood or state.verdict == OUT_OF_DATE
+        tamper = tamper or state.verdict == FALSIFICATION
+        if (
+            kind == "tamper"
+            and run.divergence_s is not None
+            and state.t_s >= run.divergence_s
+            and state.verdict == FALSIFICATION
+        ):
+            detected = True
+    return {
+        "ood": ood,
+        "tamper": tamper,
+        "ended_tamper": previous == FALSIFICATION,
+        "detected": detected,
+    }
+
+
+def select_ood_setting(
+    table: Sequence[dict], false_target: float, loss_target: float
+) -> dict | None:
+    """Rule: nominal false out-of-date share at most the target, and no nominal lie family
+    loses more than the loss target of its detection rate compared with the self-check switched
+    off; then the smallest mean share of +/-15% clean and physical runs that END with a tamper
+    verdict (the quantity the Phase 3B target is about, compared to the nearest percentage
+    point); then the largest mean out-of-date share on those boxes.
+    Ties: smaller window, larger margin, smaller sustained count.
+    """
+    eligible = [
+        row
+        for row in table
+        if row["nominal_false_ood_rate"] <= false_target and row["max_lie_loss"] <= loss_target
+    ]
+    if not eligible:
+        return None
+    return min(
+        eligible,
+        key=lambda r: (
+            round((r["plus15_ended_tamper_rate"] + r["minus15_ended_tamper_rate"]) * 50.0),
+            -(r["plus15_ood_rate"] + r["minus15_ood_rate"]) / 2.0,
+            r["window"],
+            -r["margin"],
+            r["sustained"],
+        ),
+    )
+
+
+def run_ood_sweep(
+    families: dict[str, Family],
+    lies: dict[str, Family],
+    seeds: Sequence[int],
+    box: BoxConfig,
+    product: ProductConfig,
+    grid: tuple[Sequence[int], Sequence[float], Sequence[int]] | None = None,
+) -> dict:
+    """Grid over the self-check's window, margin and sustained count on the TRAINING seeds."""
+    windows, margins, sustained_counts = grid or (
+        OOD_SWEEP_WINDOWS,
+        OOD_SWEEP_MARGINS,
+        OOD_SWEEP_SUSTAINED,
+    )
+    config = load_detector_config()
+    twin = load_twin_params()
+    boxes = mismatch_boxes(box)
+    variants = {
+        "plus15": boxes["tau, R_th and capacity +15%"],
+        "minus15": boxes["tau, R_th and capacity -15%"],
+    }
+    lie_names = [n for n in LIE_FAMILIES_PHASE3] + [
+        "injected_drift_0.5_clean",
+        "injected_drift_1_fault",
+    ]
+    everything = {**families, **lies}
+    mismatch_seeds = list(seeds)[:OOD_SWEEP_MISMATCH_SEEDS]
+    nominal = {
+        n: [everything[n].make(sd, box) for sd in seeds] for n in CLEAN_NAMES + PHYSICAL_NAMES
+    }
+    lie_runs = {n: [everything[n].make(sd, box) for sd in seeds] for n in lie_names}
+    mismatched = {
+        key: {
+            n: [everything[n].make(sd, vbox) for sd in mismatch_seeds]
+            for n in CLEAN_NAMES + PHYSICAL_NAMES
+        }
+        for key, vbox in variants.items()
+    }
+    table = []
+    base_monitor = TamperMonitor(
+        twin, phase3_config(config), product.hard_limit_consecutive_samples, box.sensor_sigma_c
+    )
+    baseline_detection = {
+        n: sum(_light_score(base_monitor, r, "tamper")["detected"] for r in lie_runs[n])
+        / len(lie_runs[n])
+        for n in lie_names
+    }
+    for window in windows:
+        for margin in margins:
+            for sustained in sustained_counts:
+                cfg = config.model_copy(
+                    update={
+                        "ood_window_samples": window,
+                        "ood_gain_margin": margin,
+                        "ood_sustained_samples": sustained,
+                    }
+                )
+                monitor = TamperMonitor(
+                    twin, cfg, product.hard_limit_consecutive_samples, box.sensor_sigma_c
+                )
+
+                def share(runs_by_name, kind, field, _m=monitor):
+                    scores = [
+                        _light_score(_m, r, kind)[field] for rs in runs_by_name.values() for r in rs
+                    ]
+                    return sum(scores) / len(scores)
+
+                lie_detection = {
+                    n: share({n: lie_runs[n]}, "tamper", "detected") for n in lie_names
+                }
+                row = {
+                    "window": window,
+                    "margin": margin,
+                    "sustained": sustained,
+                    "nominal_false_ood_rate": share(nominal, "clean", "ood"),
+                    "nominal_ended_tamper_rate": share(nominal, "clean", "ended_tamper"),
+                    "min_lie_detection": min(lie_detection.values()),
+                    "max_lie_loss": max(
+                        baseline_detection[n] - lie_detection[n] for n in lie_names
+                    ),
+                    "lie_detection": lie_detection,
+                    "lie_detection_without_check": baseline_detection,
+                }
+                for key, runs in mismatched.items():
+                    row[f"{key}_ood_rate"] = share(runs, "clean", "ood")
+                    row[f"{key}_ended_tamper_rate"] = share(runs, "clean", "ended_tamper")
+                    row[f"{key}_any_tamper_rate"] = share(runs, "clean", "tamper")
+                table.append(row)
+    return {
+        "false_target": OOD_FALSE_TARGET,
+        "lie_loss_target": OOD_LIE_LOSS_TARGET,
+        "lie_families": lie_names,
+        "table": table,
+        "selected": select_ood_setting(table, OOD_FALSE_TARGET, OOD_LIE_LOSS_TARGET),
+    }
 
 
 # ----------------------------------------------------------------------------- the whole study
@@ -499,23 +863,62 @@ def run_evaluation(quick: bool = False) -> dict:
     monitor = TamperMonitor(
         twin, config, product.hard_limit_consecutive_samples, box.sensor_sigma_c
     )
+    lies = build_lie_families()
     sweep = run_sweep(families, train, box, product)
+    quick_grid = (
+        [config.ood_window_samples],
+        [config.ood_gain_margin],
+        [config.ood_sustained_samples],
+    )
+    ood_sweep = run_ood_sweep(families, lies, train, box, product, quick_grid if quick else None)
     final = {n: evaluate_family(f, test, box, monitor) for n, f in families.items()}
+    lie_final = {n: evaluate_family(f, test, box, monitor) for n, f in lies.items()}
     mismatch = summarise_boxes(families, mismatch_seeds, mismatch_boxes(box), monitor)
+    before_monitor = TamperMonitor(
+        twin, phase3_config(config), product.hard_limit_consecutive_samples, box.sensor_sigma_c
+    )
+    before_final = {n: evaluate_family(f, test, box, before_monitor) for n, f in families.items()}
+    before_mismatch = summarise_boxes(families, mismatch_seeds, mismatch_boxes(box), before_monitor)
+    dev_seeds = DEVELOPMENT_SEEDS[:QUICK_COUNT] if quick else DEVELOPMENT_SEEDS
+    dev_final = {n: evaluate_family(f, dev_seeds, box, monitor) for n, f in families.items()}
+    dev_lies = {n: evaluate_family(f, dev_seeds, box, monitor) for n, f in lies.items()}
+    boxes = mismatch_boxes(box)
+    lie_mismatch = {
+        label: {
+            n: evaluate_family(f, mismatch_seeds, boxes[label], monitor) for n, f in lies.items()
+        }
+        for label in ("tau, R_th and capacity +15%", "tau, R_th and capacity -15%")
+    }
     return {
         "note": FOOTER,
         "quick": quick,
+        "dev_final": dev_final,
+        "dev_lies": dev_lies,
+        "lie_mismatch": lie_mismatch,
+        "ledger": [list(row) for row in SEED_LEDGER],
         "seeds": {
             "calibration": [CALIBRATION_SEEDS[0], CALIBRATION_SEEDS[-1]],
             "training": [train[0], train[-1], len(train)],
             "test": [test[0], test[-1], len(test)],
+            "development": [dev_seeds[0], dev_seeds[-1], len(dev_seeds)],
             "mismatch": [mismatch_seeds[0], mismatch_seeds[-1], len(mismatch_seeds)],
         },
         "config": {"cusum_k": config.cusum_k, "cusum_h": config.cusum_h},
+        "ood_config": {
+            "window": config.ood_window_samples,
+            "margin": config.ood_gain_margin,
+            "sustained": config.ood_sustained_samples,
+            "max_gain_se": config.ood_max_gain_se,
+            "band": [config.ood_gain_band_low, config.ood_gain_band_high],
+        },
         "twin": twin.model_dump(),
         "sweep": sweep,
+        "ood_sweep": ood_sweep,
         "final": final,
+        "lies": lie_final,
         "mismatch": mismatch,
+        "before_final": before_final,
+        "before_mismatch": before_mismatch,
     }
 
 
@@ -534,7 +937,7 @@ def render_markdown(study: dict) -> str:
     cfg = study["config"]
     seeds = study["seeds"]
     lines = [
-        "# Phase 3: Detector evaluation",
+        "# Phase 3B: Detector evaluation (Phase 3 tables re-measured, then the Phase 3B additions)",
         "",
         f"Measured with the real simulator, the real monitor and the stored calibration. {FOOTER}",
         "",
@@ -673,8 +1076,261 @@ def render_markdown(study: dict) -> str:
         lines.append(
             f"| {label} | " + " | ".join(str(v) for v in m["false_by_family"].values()) + " |"
         )
+    lines += _markdown_3b(study)
     lines += ["", f"*{FOOTER}*", ""]
     return "\n".join(lines)
+
+
+def _markdown_3b(study: dict) -> list[str]:
+    ood = study["ood_sweep"]
+    cfg = study["ood_config"]
+    sel = ood["selected"]
+    lines = [
+        "",
+        "## Seed ledger",
+        "",
+        "| block | seeds | what it was used for | status |",
+        "|---|---|---|---|",
+        *[f"| {a} | {b} | {c} | {d} |" for a, b, c, d in study["ledger"]],
+        "",
+        "The final numbers below come from the final block (40001 to 40200; mismatch runs use its "
+        "first 100). The development blocks are reported only for comparison.",
+        "",
+        "## Phase 3B: the twin-out-of-date self-check, threshold sweep (training seeds)",
+        "",
+        "Tuned on the training seeds only. 'False out-of-date' is the share of NOMINAL-box clean "
+        "and physical runs (7 families) in which the verdict twin_out_of_date appeared at any "
+        "time. 'Worst lie loss' is the largest drop in detection rate, over the nominal lie families "
+        + ", ".join(ood["lie_families"])
+        + ", compared with the self-check switched off. The +15% and -15% columns are the share of clean and physical runs on a box whose "
+        "tau, R_th and capacity differ by that much in which twin_out_of_date appeared, and the "
+        "share that END with a tamper verdict.",
+        "",
+        "| window | margin | sustained | false out-of-date (nominal) | worst lie loss "
+        "| +15% out-of-date | +15% ends tamper | -15% out-of-date | -15% ends tamper |",
+        "|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for r in ood["table"]:
+        lines.append(
+            f"| {r['window']} | {r['margin']} | {r['sustained']} "
+            f"| {_pct(r['nominal_false_ood_rate'])} | {_pct(r['max_lie_loss'])} "
+            f"| {_pct(r['plus15_ood_rate'])} | {_pct(r['plus15_ended_tamper_rate'])} "
+            f"| {_pct(r['minus15_ood_rate'])} | {_pct(r['minus15_ended_tamper_rate'])} |"
+        )
+    lines += [
+        "",
+        f"Selection rule: keep the settings whose nominal false out-of-date share is at most "
+        f"{_pct(ood['false_target'])} and whose worst lie loss is at most "
+        f"{_pct(ood['lie_loss_target'])}; then take the smallest mean share of +/-15% runs that end with a tamper verdict "
+        "(to the nearest percentage point), then the largest mean out-of-date share (ties: smaller "
+        "window, larger margin, smaller sustained count). "
+        + (
+            f"The rule selects window = {sel['window']}, margin = {sel['margin']}, "
+            f"sustained = {sel['sustained']}."
+            if sel
+            else "No setting met the targets."
+        )
+        + f" The settings in config/detectors.yaml are window = {cfg['window']}, "
+        f"margin = {cfg['margin']}, sustained = {cfg['sustained']}.",
+        "",
+        "## Phase 3B: lie families (test seeds)",
+        "",
+        "Drift lies grow linearly from the start at the stated rate (kelvin per hour); the mimic "
+        "is an attacker with a model of the box and is EXPECTED to be invisible to physics. "
+        "'Detected' = a falsification verdict at or after the first divergence. 'Flagged "
+        "untrusted' = the monitor declared the data untrusted (falsification or twin out of "
+        "date). Delay is from the first divergence (minutes / samples).",
+        "",
+        "| family | runs | detected | flagged untrusted | ends as | delay median | delay p90 |",
+        "|---|---:|---:|---:|---|---:|---:|",
+    ]
+    for name, e in study["lies"].items():
+        d = e["delay"]
+        ends = ", ".join(f"{v} {k}" for k, v in sorted(e["final_verdicts"].items()))
+        lines.append(
+            f"| {name} | {e['runs']} | {_pct(e['detection_rate'])} "
+            f"| {_pct(e['flagged_untrusted_rate'])} | {ends} "
+            f"| {_num(d['median_min'])} / {_num(d['median_samples'], 1)} "
+            f"| {_num(d['p90_min'])} / {_num(d['p90_samples'], 1)} |"
+        )
+    lines += [
+        "",
+        "## Phase 3B: mismatch, with the new verdict space",
+        "",
+        "Clean and physical families on boxes that differ from the calibration (first "
+        f"{study['seeds']['mismatch'][2]} test seeds per family). 'Any tamper' = a tamper verdict "
+        "at any time; 'ends tamper' = the last verdict is a tamper verdict; 'out of date' = "
+        "twin_out_of_date appeared; 'from start' = already out of date in the first window.",
+        "",
+        "| real box | runs | any tamper | ends tamper | out of date | ends out of date "
+        "| out of date from start | untrusted |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for label, m in study["mismatch"].items():
+        lines.append(
+            f"| {label} | {m['no_tamper_runs']} | {m['false_tamper_verdicts']} "
+            f"| {m['false_tamper_ended']} | {m['ood_verdict_runs']} | {m['ood_ended_runs']} "
+            f"| {m['ood_from_start_runs']} | {m['untrusted_runs']} |"
+        )
+    lines += [
+        "",
+        "Runs that END with a tamper verdict, by family:",
+        "",
+        "| real box | "
+        + " | ".join(next(iter(study["mismatch"].values()))["false_ended_by_family"])
+        + " |",
+        "|---|" + "---:|" * len(next(iter(study["mismatch"].values()))["false_ended_by_family"]),
+    ]
+    for label, m in study["mismatch"].items():
+        lines.append(
+            f"| {label} | " + " | ".join(str(v) for v in m["false_ended_by_family"].values()) + " |"
+        )
+    lines += [
+        "",
+        "## Phase 3B: before and after (same test seeds)",
+        "",
+        "'Before' is the Phase 3 behaviour (the same code with the self-check switched off). "
+        "Detection and delay are for the five Phase 3 lie families.",
+        "",
+        "| family | detected before | detected after | delay median before (min) "
+        "| delay median after (min) | delay p90 before | delay p90 after |",
+        "|---|---:|---:|---:|---:|---:|---:|",
+    ]
+    for name in LIE_FAMILIES_PHASE3:
+        b, a = study["before_final"][name], study["final"][name]
+        lines.append(
+            f"| {name} | {_pct(b['detection_rate'])} | {_pct(a['detection_rate'])} "
+            f"| {_num(b['delay']['median_min'])} | {_num(a['delay']['median_min'])} "
+            f"| {_num(b['delay']['p90_min'])} | {_num(a['delay']['p90_min'])} |"
+        )
+
+    def false_total(block: dict, key: str) -> int:
+        return sum(e[key] for e in block.values() if e["kind"] in ("clean", "physical"))
+
+    control_b = study["before_final"]["harmless_hold"]["runs_with_tamper_verdict"]
+    control_a = study["final"]["harmless_hold"]["runs_with_tamper_verdict"]
+    lines += [
+        "",
+        "| measure (nominal box, test seeds) | before | after |",
+        "|---|---:|---:|",
+        f"| clean + physical runs with a tamper verdict | "
+        f"{false_total(study['before_final'], 'runs_with_tamper_verdict')} "
+        f"| {false_total(study['final'], 'runs_with_tamper_verdict')} |",
+        f"| clean + physical tamper episodes | "
+        f"{false_total(study['before_final'], 'falsification_episodes')} "
+        f"| {false_total(study['final'], 'falsification_episodes')} |",
+        f"| control (harmless_hold) runs with a tamper verdict | {control_b} | {control_a} |",
+        f"| clean + physical runs that went twin_out_of_date | 0 "
+        f"| {false_total(study['final'], 'runs_with_ood_verdict')} |",
+        "",
+        "| real box | any tamper before | any tamper after | ends tamper before | ends tamper after |",
+        "|---|---:|---:|---:|---:|",
+    ]
+    for label in study["mismatch"]:
+        b, a = study["before_mismatch"][label], study["mismatch"][label]
+        lines.append(
+            f"| {label} | {b['false_tamper_verdicts']} | {a['false_tamper_verdicts']} "
+            f"| {b['false_tamper_ended']} | {a['false_tamper_ended']} |"
+        )
+    lines += [
+        "",
+        "## Phase 3B: the worst-case bound",
+        "",
+        "For every run the monitor declared untrusted, the bound on the equivalent reference time "
+        "accumulated from t0 to the end was compared with the TRUE value (the true temperature "
+        "series fed to the potency maths, in the scoring code only). 'Valid' = bound >= true. "
+        "Ratio = bound / true.",
+        "",
+        "| family | runs | untrusted | bound computed | valid | ratio median | ratio p90 | ratio max |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for block in (study["final"], study["lies"]):
+        for name, e in block.items():
+            b = e["bound"]
+            if not b["computed"]:
+                continue
+            lines.append(
+                f"| {name} | {e['runs']} | {e['runs_untrusted']} | {b['computed']} | {b['valid']} "
+                f"| {_num(b['ratio_median'], 2)} | {_num(b['ratio_p90'], 2)} | {_num(b['ratio_max'], 2)} |"
+            )
+    lines += _bound_tables(study)
+    return lines
+
+
+def _bound_rows(block: dict) -> list[str]:
+    out = []
+    for name, e in block.items():
+        b = e["bound"]
+        if not b["computed"]:
+            continue
+        out.append(
+            f"| {name} | {e['runs']} | {e['runs_level_untrusted']} | {b['computed']} | {b['valid']} "
+            f"| {_num(b['ratio_median'], 2)} | {_num(b['ratio_p90'], 2)} | {_num(b['ratio_max'], 2)} |"
+        )
+    return out
+
+
+def _bound_tables(study: dict) -> list[str]:
+    head = [
+        "| family | runs | level untrusted | bound computed | valid | ratio median | ratio p90 | ratio max |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    lines = ["", "## Phase 3B fix: bound validity, three places", ""]
+    lines += ["### A. Nominal box, FINAL seeds (40001 to 40200)", "", *head]
+    lines += _bound_rows(study["final"]) + _bound_rows(study["lies"])
+    viol = sorted(
+        {
+            s
+            for blk in (study["final"], study["lies"])
+            for e in blk.values()
+            for s in e["violations"]
+        }
+    )
+    lines += ["", f"Violations on the nominal box, final seeds: {viol if viol else 'none'}."]
+    lines += [
+        "",
+        "### B. Nominal box, DEVELOPMENT seeds (20001 to 20200), for comparison",
+        "",
+        *head,
+    ]
+    lines += _bound_rows(study["dev_final"]) + _bound_rows(study["dev_lies"])
+    dviol = sorted(
+        {
+            s
+            for blk in (study["dev_final"], study["dev_lies"])
+            for e in blk.values()
+            for s in e["violations"]
+        }
+    )
+    lines += ["", f"Violations on the development seeds: {dviol if dviol else 'none'}."]
+    for label, block in study["lie_mismatch"].items():
+        lines += [
+            "",
+            f"### C. Mismatched box ({label}), lie families, first 100 final seeds",
+            "",
+            *head,
+        ]
+        lines += _bound_rows(block)
+        n = sum(e["bound"]["computed"] for e in block.values())
+        bad = sum(len(e["violations"]) for e in block.values())
+        lines += [
+            "",
+            f"Bounds computed: {n}; violations: {bad}"
+            + (" (reported as a limitation, not a stop)." if bad else "."),
+        ]
+    lines += ["", "### Trust levels of clean and physical runs on mismatched boxes", ""]
+    lines += [
+        "| real box | runs | trusted | low confidence | untrusted |",
+        "|---|---:|---:|---:|---:|",
+    ]
+    for label, m in study["mismatch"].items():
+        notamper = [e for e in m["families"].values() if e["kind"] in ("clean", "physical")]
+        runs = sum(e["runs"] for e in notamper)
+        lc = sum(e["runs_level_low_confidence"] for e in notamper)
+        un = sum(e["runs_level_untrusted"] for e in notamper)
+        lines.append(f"| {label} | {runs} | {runs - lc - un} | {lc} | {un} |")
+    lines += ["", FOOTER]
+    return lines
 
 
 def _write(path: Path, text: str) -> None:
@@ -687,6 +1343,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Evaluate the tamper detectors.")
     parser.add_argument("--quick", action="store_true", help="a few seeds per family (for tests)")
     parser.add_argument("--sweep-only", action="store_true", help="print only the CUSUM sweep")
+    parser.add_argument(
+        "--ood-sweep-only",
+        action="store_true",
+        help="print only the twin-out-of-date threshold sweep (training seeds)",
+    )
     parser.add_argument("--markdown", default=str(DEFAULT_MARKDOWN))
     parser.add_argument("--json", default=str(DEFAULT_JSON))
     args = parser.parse_args(argv)
@@ -697,7 +1358,21 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(row)
         print("selected:", sweep["selected"])
         return 0
-    study = run_evaluation(quick=args.quick)
+    if args.ood_sweep_only:
+        box, product = load_box_config(), load_product_config()
+        sweep = run_ood_sweep(build_families(), build_lie_families(), TRAIN_SEEDS, box, product)
+        for row in sweep["table"]:
+            print({k: v for k, v in row.items() if not k.startswith("lie_detection")})
+        print(
+            "selected:",
+            sweep["selected"]
+            and {k: v for k, v in sweep["selected"].items() if not k.startswith("lie_detection")},
+        )
+        print(
+            "baseline lie detection (check off):", sweep["table"][0]["lie_detection_without_check"]
+        )
+        return 0
+    study = run_evaluation(quick=args.quick)  # Phases 3 and 3B
     markdown = render_markdown(study)
     _write(Path(args.markdown), markdown)
     _write(Path(args.json), json.dumps(study, indent=1, default=float) + "\n")

@@ -18,12 +18,15 @@ _SPOOF_ARGS: dict[str, tuple[str, ...]] = {
     "hold": ("reported_c", "duration_min"),
     "offset": ("delta_c", "duration_min"),
     "replay": ("replay_from_h", "replay_len_h", "duration_min"),
+    "drift": ("rate_c_per_h", "duration_min", "max_offset_c"),
+    "mimic": ("duration_min",),
 }
 USAGE = (
     "kill_cooling | derate_cooling F | restore_cooling | open_door MIN [W] | "
     "heat_soak DELTA HOURS [RAMP] | cold_snap DELTA HOURS [RAMP] | "
     "spoof_sensor hold C [MIN] | spoof_sensor offset DELTA [MIN] | "
-    "spoof_sensor replay FROM_H LEN_H [MIN] | stop_spoof | glitch_spike C | shock G"
+    "spoof_sensor replay FROM_H LEN_H [MIN] | spoof_sensor drift RATE_K_PER_H [MIN [MAX_K]] | "
+    "spoof_sensor mimic [MIN] | stop_spoof | glitch_spike C | shock G"
 )
 
 
@@ -35,7 +38,7 @@ def parse_command(text: str) -> dict:
     name, args = words[0], words[1:]
     if name == "spoof_sensor":
         if not args or args[0] not in _SPOOF_ARGS:
-            raise ValueError("spoof_sensor needs a mode: hold, offset or replay")
+            raise ValueError("spoof_sensor needs a mode: hold, offset, replay, drift or mimic")
         mode, args = args[0], args[1:]
         names = _SPOOF_ARGS[mode]
         event: dict = {"type": name, "mode": mode}

@@ -82,6 +82,7 @@ class BoxConfig:
     door_default_power_w: float
     sensor_sigma_ambient_c: float
     detect_divergence_c: float
+    door_max_power_w: float
 
     @property
     def heat_capacity_j_per_k(self) -> float:
@@ -107,9 +108,15 @@ def load_box_config(path: Path | str | None = None) -> BoxConfig:
         "sim_substep_s",
         "door_default_power_w",
         "detect_divergence_c",
+        "door_max_power_w",
     ):
         if raw[name] <= 0:
             raise ConfigError(f"{name} must be greater than 0 (got {raw[name]})")
+    if raw["door_max_power_w"] < raw["door_default_power_w"]:
+        raise ConfigError(
+            "door_max_power_w must be at least door_default_power_w "
+            f"(got {raw['door_max_power_w']} and {raw['door_default_power_w']})"
+        )
     for name in (
         "sensor_sigma_c",
         "sensor_sigma_rh_pct",
