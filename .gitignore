@@ -43,6 +43,7 @@ data/runs/
 *.pubkey
 assets-raw/
 *.log
+.playwright-mcp/
 *.db
 *.sqlite
 
