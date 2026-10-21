@@ -174,7 +174,7 @@ export function Globe({ mask, tier, pixelRatio, routeState, showAlternative, shi
       {showAlternative && <Arc points={alt} color={colors.planner300} dashed progress={1} />}
       <Node position={startPos} color={colors.ice300} />
       <Node position={endPos} color={colors.ice300} />
-      {marker && <Node position={marker} color={colors.frost} radius={0.022} />}
+      {marker && <Node position={marker} color={ROUTE_COLOR[routeState]} radius={0.026} />}
     </group>
   );
 }

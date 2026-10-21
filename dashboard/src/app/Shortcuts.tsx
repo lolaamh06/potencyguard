@@ -4,10 +4,16 @@ import { useAppStore } from "./appStore";
 
 const KEYS: [string, string][] = [
   ["?", "show or hide this list"],
-  ["Space, PageDown, Right", "next chapter (Shift+Space, PageUp, Left: previous)"],
+  ["Space, PageDown, Right", "Story: next chapter (Shift+Space, PageUp, Left: previous)"],
   ["Down, Up", "scroll a little"],
   ["Home, End", "start, end of the story"],
   ["Enter", "enter the Control Room (at the last chapter)"],
+  ["1 to 5", "Control Room: pick a scenario"],
+  ["Space", "Control Room: pause or resume the replay"],
+  ["R", "Control Room: reset the scenario"],
+  ["T", "Control Room: show a recorded tamper result"],
+  ["A", "Control Room: approve (demo, a decision must be open)"],
+  ["P", "Control Room: provenance drawer"],
   ["G", "go to the Story"],
   ["C", "go to the Control Room"],
   ["Q", "change the picture quality (high, medium, low, 2D)"],

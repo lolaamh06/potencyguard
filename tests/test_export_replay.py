@@ -48,7 +48,7 @@ def test_all_five_scenarios_and_an_index_are_written(exported: Path) -> None:
 @pytest.mark.parametrize("name", list(export_replay.SCENARIOS))
 def test_schema_of_each_file(exported: Path, name: str) -> None:
     doc = _load(exported, name)
-    assert set(doc) == {"meta", "frames", "events", "decision", "chain"}
+    assert set(doc) == {"meta", "frames", "events", "decision", "chain", "tamper", "provenance"}
     meta = doc["meta"]
     assert meta["schema_version"] == export_replay.SCHEMA_VERSION
     assert meta["scenario_id"] == name

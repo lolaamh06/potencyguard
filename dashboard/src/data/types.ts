@@ -56,12 +56,12 @@ export interface DecisionSummary {
   shipment_status: string;
   reasons: string[];
   close_call: boolean;
-  close_call_text: string;
   needs_human: boolean;
+  explanation: string;
   trust_level: string;
   verdict: string;
-  worst_case_potency: number | null;
-  worst_case_shelf_life_used_fraction: number | null;
+  recomputed: { t_h: number; potency: number; tau_eq_h: number; trust_level: string; verdict: string; claims_consistent: boolean };
+  worst_case: { potency: number; shelf_life_used_fraction: number; bound_used: boolean; label: string };
 }
 
 export interface ChainSummary {
@@ -90,6 +90,7 @@ export interface ReplayMeta {
   recording_seed: number | null;
   sample_interval_s: number | null;
   frame_step: number;
+  cusum_h: number;
   samples_in_recording: number;
   duration_h: number;
   checkpoint_h: number;
@@ -101,12 +102,48 @@ export interface ReplayMeta {
   generated_by: string;
 }
 
+export interface TamperEdit {
+  entry: number;
+  ok: boolean;
+  first_broken_index: number;
+  reason: string;
+  text: string;
+  action: string;
+}
+
+export interface TamperData {
+  label: string;
+  ledger_length: number;
+  edits: TamperEdit[];
+  truncation: {
+    removed: number;
+    action: string;
+    without_anchor: { ok: boolean; text: string };
+    with_anchor: { ok: boolean; text: string; reason: string };
+  };
+}
+
+export interface ProvenanceData {
+  source: string;
+  scenario_id: string;
+  from_replay: boolean;
+  sap_adapter_mode: string;
+  software_version: string;
+  signing_key_id: string;
+  simulated: boolean;
+  note: string;
+  recording_seed: number | null;
+  planner_seed: number;
+}
+
 export interface ReplayFile {
   meta: ReplayMeta;
   frames: Frame[];
   events: ScenarioEvent[];
   decision: DecisionSummary;
   chain: ChainSummary;
+  tamper: TamperData;
+  provenance: ProvenanceData;
 }
 
 export interface ReplayIndexEntry {

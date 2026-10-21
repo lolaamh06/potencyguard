@@ -41,3 +41,7 @@
 
 - `scripts/export_replay.py` now takes each scenario's decision from the Phase 6 backend itself (in process), so the exported route equals `python -m backend replay --all`.
 - `python scripts/export_story.py [--out DIR]` writes the Story data: `dashboard/src/data/bundled/chapter1.json` (reuses the F1 generator), `dashboard/public/story/chapter5.json` (5,000 seeded outcomes per action and the precomputed alpha table) and `chapter6.json` (approval card content and the real edit-and-verify). Tested by `tests/test_export_story.py`.
+
+## Phase F4 changes
+
+- `scripts/export_replay.py` now also writes, per scenario: `tamper` (the ledger length, the real `verify_chain` result for edits at five positions, and the truncation with and without the anchor, all on ledger copies), `decision.worst_case` (a bound, not an estimate), `decision.recomputed` (the backend's own recomputation), `provenance` and `meta.cusum_h`. Tested by `tests/test_export_tamper.py` (the exported results equal a fresh `verify_chain` on the same edits).

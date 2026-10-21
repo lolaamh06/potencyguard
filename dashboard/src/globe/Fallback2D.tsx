@@ -10,6 +10,7 @@ import { routePoints } from "./geo";
 import { sampleLandPoints } from "./landPoints";
 import type { GlobeProps } from "./types";
 import { useLandMask } from "./useLandMask";
+import { useGlobeStore } from "./globeStore";
 
 type V = [number, number, number];
 
@@ -25,6 +26,7 @@ export function Fallback2D(props: GlobeProps) {
   const mask = useLandMask();
   const reduced = useAppStore((s) => s.reducedMotion);
   const lastDrawn = useRef(-1);
+  const layoutNow = useGlobeStore((s) => s.layout);
   const points = useRef<Float32Array | null>(null);
 
   useEffect(() => {
@@ -42,7 +44,7 @@ export function Fallback2D(props: GlobeProps) {
       el.height = h;
       lastDrawn.current = -1;
     }
-    const progress = reduced ? 0.5 : scrollState.progress;
+    const progress = reduced || layoutNow === "control" ? 0.5 : scrollState.progress;
     if (Math.abs(progress - lastDrawn.current) < 0.004 && lastDrawn.current >= 0) return;
     lastDrawn.current = progress;
     const ctx = el.getContext("2d");
@@ -50,7 +52,7 @@ export function Fallback2D(props: GlobeProps) {
     ctx.fillStyle = colors.void;
     ctx.fillRect(0, 0, w, h);
     const radius = Math.min(w, h) * (w / h > 1.2 ? 0.36 : 0.42);
-    const cx = w / h > 1.2 ? w * 0.62 : w / 2;
+    const cx = layoutNow !== "control" && w / h > 1.2 ? w * 0.62 : w / 2;
     const cy = h * 0.5;
     const glow = ctx.createRadialGradient(cx, cy, radius * 0.9, cx, cy, radius * 1.18);
     glow.addColorStop(0, "rgba(93, 214, 255, 0.35)");
@@ -117,7 +119,7 @@ export function Fallback2D(props: GlobeProps) {
         ctx.fill();
       }
     }
-  }, [props.origin, props.destination, props.routeState, props.showAlternative, props.alternativeVia, reduced]);
+  }, [props.origin, props.destination, props.routeState, props.showAlternative, props.alternativeVia, reduced, layoutNow]);
 
   useScrollTicker(draw);
   useEffect(() => {
@@ -131,7 +133,7 @@ export function Fallback2D(props: GlobeProps) {
   }, [draw, mask]);
 
   return (
-    <div className="canvas-layer" data-testid="globe-2d">
+    <div className={`canvas-layer ${layoutNow === "control" ? "control" : ""}`} data-testid="globe-2d">
       <canvas
         ref={canvas}
         style={{ width: "100%", height: "100%", display: "block" }}

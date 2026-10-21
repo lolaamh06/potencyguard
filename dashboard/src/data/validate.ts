@@ -78,6 +78,11 @@ export function validateReplay(raw: unknown, expectedId?: string): Result<Replay
     return fail("The scenario file has no decision.");
   }
   if (!isObj(chain) || typeof chain.ok !== "boolean" || !isNum(chain.entries_total)) return fail("The scenario file has no chain summary.");
+  const { tamper, provenance } = raw;
+  if (!isObj(tamper) || !Array.isArray(tamper.edits) || tamper.edits.length === 0 || !isObj(tamper.truncation)) return fail("The scenario file has no recorded tamper results.");
+  if (!isObj(provenance) || !isStr(provenance.source) || !isStr(provenance.note)) return fail("The scenario file has no provenance block.");
+  if (!isNum(meta.cusum_h)) return fail("The scenario file has no CUSUM threshold.");
+  if (!isObj(decision.worst_case) || !isObj(decision.recomputed)) return fail("The decision has no worst-case or recomputed figures.");
   return { ok: true, value: raw as unknown as ReplayFile };
 }
 

@@ -1,7 +1,9 @@
 # dashboard
 
-- What lives here: the cinematic Story and Control Room front end (Vite + React + TypeScript + three.js). Phase F2 built the foundation (app shell, scroll rig, 3D globe, quality governor, mode adapter, TypeScript potency mirror). Phase F3 built the Story: the Prologue and Chapters 1 to 7 in `src/story/`, with Control Room panels still to come (F4 and F5).
+- What lives here: the cinematic Story and Control Room front end (Vite + React + TypeScript + three.js). Phase F2 built the foundation (app shell, scroll rig, 3D globe, quality governor, mode adapter, TypeScript potency mirror). Phase F3 built the Story (`src/story/`). Phase F4 built the Control Room (`src/controlroom/`): replay-first, offline, five scenarios.
 - Run it: `npm run dev` (serves http://127.0.0.1:5173). `npm run build` and `npm test` check the code. Open `/?tier=high`, `/?mode=replay#/control-room` and so on.
+- Control Room keys: 1 to 5 pick a scenario, Space pause, R reset, T show a recorded tamper result, A approve (demo), P provenance, G Story, C Control Room, ? list. `?rec=1` is recording mode (V starts and stops a scripted demo sequence; cursor, hints and the performance overlay are hidden, quality is locked).
+- Production build: `npm run build`, then `npx vite preview --host 127.0.0.1 --port 4173`.
 - URL options: `?mode=story|replay|live` (data source, default story), `?tier=high|medium|low|fallback2d` (forces a quality tier). Keys: `?` shows the list; `Q` quality, `D` performance numbers, `M` reduced motion, `G` Story, `C` Control Room, Space and arrows to move.
 - Source: `src/app` (shell), `src/scroll` (scroll rig and chapter table), `src/globe` (the globe), `src/quality` (governor), `src/data` (adapter and validation), `src/potency` (TypeScript potency mirror, tested against `shared/test-vectors/`), `src/theme` (tokens, fonts).
 - Data: `public/replay/` is written by `python scripts/export_replay.py`; `public/story/` and `src/data/bundled/chapter1.json` by `python scripts/export_story.py`; `public/globe/` by `python scripts/make_land_mask.py` (README there names the source and licence). Fonts in `public/fonts/` are SIL OFL 1.1.

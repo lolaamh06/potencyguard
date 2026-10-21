@@ -16,6 +16,10 @@ export const hasWebgl = webglAvailable();
 
 function initialTier(): { tier: Tier; locked: boolean } {
   const forced = parseTier(window.location.search);
+  if (new URLSearchParams(window.location.search).get("rec") === "1") {
+    // recording mode locks the tier so the picture does not change during a recording
+    return { tier: forced ?? (hasWebgl ? "high" : "fallback2d"), locked: true };
+  }
   if (forced !== null) return { tier: hasWebgl || forced === "fallback2d" ? forced : "fallback2d", locked: true };
   return { tier: hasWebgl ? "high" : "fallback2d", locked: !hasWebgl };
 }

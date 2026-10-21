@@ -22,6 +22,7 @@ import { cameraPose } from "./cameraPath";
 import { stageCamera } from "./stageCamera";
 import { Stage } from "./Stage";
 import { useStoryBundle } from "../data/useStoryData";
+import { useGlobeStore } from "./globeStore";
 import { Fallback2D } from "./Fallback2D";
 import { Globe } from "./Globe";
 import { DEFAULT_GLOBE_PROPS, type GlobeProps } from "./types";
@@ -37,24 +38,27 @@ function CameraRig() {
   const size = useThree((s) => s.size);
   const set = useThree((s) => s.set);
   const first = useRef(true);
+  const layout = useGlobeStore((s) => s.layout);
 
   useEffect(() => {
     // Wide screens: shift the globe right so the story text has the left side. Tall screens:
     // shift it down so the text has the top.
-    const shiftX = size.width / size.height > 1.2 ? size.width * 0.2 : 0;
-    const shiftY = size.width / size.height < 1 ? size.height * 0.2 : 0;
+    const control = layout === "control";
+    const shiftX = !control && size.width / size.height > 1.2 ? size.width * 0.2 : 0;
+    const shiftY = !control && size.width / size.height < 1 ? size.height * 0.2 : 0;
     const persp = camera as typeof camera & { setViewOffset?: (...a: number[]) => void; clearViewOffset?: () => void };
     if (shiftX > 0 || shiftY > 0) persp.setViewOffset?.(size.width, size.height, -shiftX, -shiftY, size.width, size.height);
     else persp.clearViewOffset?.();
     camera.updateProjectionMatrix();
     set({});
-  }, [camera, size, set]);
+  }, [camera, size, set, layout]);
+
 
   useFrame((_, delta) => {
     const reduced = useAppStore.getState().reducedMotion;
-    const portrait = size.width / size.height < 1;
-    const globePose = cameraPose(scrollState.progress, undefined, reduced);
-    const pose = stageCamera(scrollState.chapter, scrollState.local, globePose, reduced);
+    const portrait = layout !== "control" && size.width / size.height < 1;
+    const globePose = cameraPose(layout === "control" ? 0.5 : scrollState.progress, undefined, reduced);
+    const pose = layout === "control" ? globePose : stageCamera(scrollState.chapter, scrollState.local, globePose, reduced);
     const k = portrait ? 1.45 : 1;
     const dive = 1 - 0.5 * scrollState.dive;
     _target.set(...pose.target);
@@ -162,7 +166,9 @@ class SceneBoundary extends Component<{ children: ReactNode; props: GlobeProps }
 }
 
 export function GlobeScene(props: Partial<GlobeProps>) {
-  const globeProps: GlobeProps = { ...DEFAULT_GLOBE_PROPS, ...props };
+  const storeProps = useGlobeStore((s) => s.props);
+  const layoutNow = useGlobeStore((s) => s.layout);
+  const globeProps: GlobeProps = { ...DEFAULT_GLOBE_PROPS, ...storeProps, ...props };
   const tier = useQualityStore((s) => s.tier);
   const settings = tierSettings(tier);
   const mask = useLandMask();
@@ -189,7 +195,7 @@ export function GlobeScene(props: Partial<GlobeProps>) {
   if (!settings.webgl) return <Fallback2D {...globeProps} />;
 
   return (
-    <div className="canvas-layer" ref={layer} data-testid="globe-canvas">
+    <div className={`canvas-layer ${layoutNow === "control" ? "control" : ""}`} ref={layer} data-testid="globe-canvas">
       <SceneBoundary props={globeProps}>
         <Canvas
           dpr={dpr}

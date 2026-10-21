@@ -127,6 +127,10 @@ def _series(path: Path, product, box):  # noqa: ANN001
     return frames, events, index
 
 
+def _cusum_h(product, box) -> float:  # noqa: ANN001
+    return float(TamperMonitor.from_defaults(product, box).config.cusum_h)
+
+
 def _header(path: Path) -> dict:
     with open(path, encoding="utf-8") as handle:
         return json.loads(handle.readline())
@@ -149,12 +153,30 @@ def backend_decision(name: str, checkpoint_h: float, tamper: str | None = None) 
         app, store, _ = make_replay_app(db=Path(tmp) / "replay.sqlite")
         try:
             with TestClient(app) as client:
-                return replay_recording(client, path, _signer(), Path(tmp), checkpoint_h, tamper)
+                summary = replay_recording(client, path, _signer(), Path(tmp), checkpoint_h, tamper)
+                summary.view_json = client.get(f"/shipments/{name}").json()  # type: ignore[attr-defined]
+                summary.provenance_json = client.get(f"/provenance/{name}").json()  # type: ignore[attr-defined]
+                return summary
         finally:
             store.close()
 
 
-def _decision(name: str, checkpoint_h: float) -> dict:
+def _worst_case(name: str, checkpoint_h: float, product, box) -> dict:  # noqa: ANN001
+    """The planner's worst-case bound at the checkpoint: a bound, not an estimate."""
+    from edge.potency import potency_from_tau_eq, shelf_life_used_fraction  # noqa: PLC0415
+    from planner.pipeline import build_inputs  # noqa: PLC0415
+
+    built = build_inputs(REPO / "data" / "recordings" / f"{name}.jsonl", checkpoint_h, product, box)
+    tau = built.inputs.start_tau_eq_h
+    return {
+        "potency": _round(potency_from_tau_eq(tau, product), 9),
+        "shelf_life_used_fraction": _round(shelf_life_used_fraction(tau, product), 9),
+        "bound_used": bool(built.inputs.bound_used),
+        "label": "worst-case bound, not an estimate",
+    }
+
+
+def _decision(name: str, checkpoint_h: float, product=None, box=None) -> dict:  # noqa: ANN001
     summary = backend_decision(name, checkpoint_h)
     d = summary.decision
     if d is None:
@@ -186,7 +208,73 @@ def _decision(name: str, checkpoint_h: float) -> dict:
         "trust_level": d["trust_level"],
         "verdict": d["verdict"],
         "approval_task": d["approval_task"],
+        "recomputed": {
+            k: summary.view_json["latest"][k]  # type: ignore[attr-defined]
+            for k in ("t_h", "potency", "tau_eq_h", "trust_level", "verdict", "claims_consistent")
+        },
+        "worst_case": _worst_case(name, checkpoint_h, product, box),
         "source": "POST /shipments/{id}/decide of the Phase 6 backend (in process)",
+    }
+
+
+def _provenance(name: str, checkpoint_h: float) -> dict:
+    return backend_decision(name, checkpoint_h).provenance_json  # type: ignore[attr-defined]
+
+
+def tamper_positions(n: int) -> list[int]:
+    """Edit positions offered in the Control Room (first, quarters, last editable)."""
+    return sorted({0, n // 4, n // 2, (3 * n) // 4, n - 2})
+
+
+TRUNCATE_COUNT = 5
+
+
+def _tamper(path: Path, product, box) -> dict:  # noqa: ANN001
+    """REAL results of edits and a truncation on COPIES of the run's ledger, from verify_chain."""
+    import tamper_demo  # noqa: PLC0415
+
+    signer = _signer()
+    with tempfile.TemporaryDirectory(prefix="pg_f4_") as tmp:
+        run = run_recording(path, product, box, signer, DEVICE_ID, Path(tmp), "f4")
+        with Ledger.open(run.ledger_path) as ledger:
+            n = len(ledger.read_entries())
+        edits = []
+        for k in tamper_positions(n):
+            copy = tamper_demo.make_copy(run.ledger_path, Path(tmp), f"edit{k}")
+            note = tamper_demo.apply_action(copy, "edit", k, 1)
+            with Ledger.open(copy) as ledger:
+                entries, anchor = ledger.read_entries(), ledger.latest_anchor()
+            result = verify_chain(entries, signer.public_key_bytes, anchor, DEVICE_ID)
+            edits.append(
+                {
+                    "entry": k,
+                    "ok": bool(result.ok),
+                    "first_broken_index": result.index,
+                    "reason": result.reason,
+                    "text": str(result),
+                    "action": note,
+                }
+            )
+        copy = tamper_demo.make_copy(run.ledger_path, Path(tmp), "truncate")
+        note = tamper_demo.apply_action(copy, "truncate", None, TRUNCATE_COUNT)
+        with Ledger.open(copy) as ledger:
+            entries, anchor = ledger.read_entries(), ledger.latest_anchor()
+        without = verify_chain(entries, signer.public_key_bytes, None, DEVICE_ID)
+        with_anchor = verify_chain(entries, signer.public_key_bytes, anchor, DEVICE_ID)
+    return {
+        "label": "Result of a real edit on a ledger copy (recorded)",
+        "ledger_length": n,
+        "edits": edits,
+        "truncation": {
+            "removed": TRUNCATE_COUNT,
+            "action": note,
+            "without_anchor": {"ok": bool(without.ok), "text": str(without)},
+            "with_anchor": {
+                "ok": bool(with_anchor.ok),
+                "text": str(with_anchor),
+                "reason": with_anchor.reason,
+            },
+        },
     }
 
 
@@ -216,7 +304,8 @@ def export_one(name: str, out_dir: Path) -> Path:
     path = REPO / "data" / "recordings" / f"{name}.jsonl"
     header = _header(path)
     frames, events, n_samples = _series(path, product, box)
-    decision = _decision(name, checkpoint_h)
+    decision = _decision(name, checkpoint_h, product, box)
+    prov = _provenance(name, checkpoint_h)
     events.append(
         {
             "t_s": checkpoint_h * 3600.0,
@@ -250,6 +339,7 @@ def export_one(name: str, out_dir: Path) -> Path:
             },
             "route": ROUTE,
             "labels": {"product": PRODUCT_LABEL, "data": DATA_LABEL},
+            "cusum_h": _cusum_h(product, box),
             "software_version": SOFTWARE_VERSION,
             "generated_by": "scripts/export_replay.py",
         },
@@ -257,6 +347,24 @@ def export_one(name: str, out_dir: Path) -> Path:
         "events": events,
         "decision": decision,
         "chain": _chain(path, product, box),
+        "tamper": _tamper(path, product, box),
+        "provenance": {
+            **{
+                k: prov[k]
+                for k in (
+                    "source",
+                    "scenario_id",
+                    "from_replay",
+                    "sap_adapter_mode",
+                    "software_version",
+                    "signing_key_id",
+                    "simulated",
+                    "note",
+                )
+            },
+            "recording_seed": header.get("seed"),
+            "planner_seed": decision["planner_seed"],
+        },
     }
     out_dir.mkdir(parents=True, exist_ok=True)
     target = out_dir / f"{name}.json"
